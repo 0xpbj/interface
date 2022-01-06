@@ -27,7 +27,7 @@ import LiquidityChartRangeInput from '../../components/LiquidityChartRangeInput'
 import { AddRemoveTabs } from '../../components/NavigationTabs'
 import { PositionPreview } from '../../components/PositionPreview'
 import RangeSelector from '../../components/RangeSelector'
-import PresetsButtons from '../../components/RangeSelector/PresetsButtons'
+// import PresetsButtons from '../../components/RangeSelector/PresetsButtons'
 import RateToggle from '../../components/RateToggle'
 import Row, { AutoRow, RowBetween, RowFixed } from '../../components/Row'
 import { SwitchLocaleLink } from '../../components/SwitchLocaleLink'
@@ -335,9 +335,9 @@ export default function AddLiquidity({
     (currencyANew: Currency) => {
       const [idA, idB] = handleCurrencySelect(currencyANew, currencyIdB)
       if (idB === undefined) {
-        history.push(`/add/${idA}`)
+        history.push(`/ltswap/${idA}`)
       } else {
-        history.push(`/add/${idA}/${idB}`)
+        history.push(`/ltswap/${idA}/${idB}`)
       }
     },
     [handleCurrencySelect, currencyIdB, history]
@@ -347,9 +347,9 @@ export default function AddLiquidity({
     (currencyBNew: Currency) => {
       const [idB, idA] = handleCurrencySelect(currencyBNew, currencyIdA)
       if (idA === undefined) {
-        history.push(`/add/${idB}`)
+        history.push(`/ltswap/${idB}`)
       } else {
-        history.push(`/add/${idA}/${idB}`)
+        history.push(`/ltswap/${idA}/${idB}`)
       }
     },
     [handleCurrencySelect, currencyIdA, history]
@@ -359,7 +359,7 @@ export default function AddLiquidity({
     (newFeeAmount: FeeAmount) => {
       onLeftRangeInput('')
       onRightRangeInput('')
-      history.push(`/add/${currencyIdA}/${currencyIdB}/${newFeeAmount}`)
+      history.push(`/ltswap/${currencyIdA}/${currencyIdB}/${newFeeAmount}`)
     },
     [currencyIdA, currencyIdB, history, onLeftRangeInput, onRightRangeInput]
   )
@@ -481,7 +481,7 @@ export default function AddLiquidity({
           hash={txHash}
           content={() => (
             <ConfirmationModalContent
-              title={<Trans>Add Liquidity</Trans>}
+              title={<Trans>Long Term Swap</Trans>}
               onDismiss={handleDismissConfirmation}
               topContent={() => (
                 <Review
@@ -508,10 +508,11 @@ export default function AddLiquidity({
         <PageWrapper wide={!hasExistingPosition}>
           <AddRemoveTabs
             creating={false}
-            adding={true}
+            adding={false}
             positionID={tokenId}
             defaultSlippage={DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE}
             showBackLink={!hasExistingPosition}
+            longterm={true}
           >
             {!hasExistingPosition && (
               <Row justifyContent="flex-end" style={{ width: 'fit-content', minWidth: 'fit-content' }}>
@@ -609,7 +610,7 @@ export default function AddLiquidity({
                 >
                   <AutoColumn gap="md">
                     <ThemedText.Label>
-                      {hasExistingPosition ? <Trans>Add more liquidity</Trans> : <Trans>Deposit Amounts</Trans>}
+                      {hasExistingPosition ? <Trans>Add more liquidity</Trans> : <Trans>Swap Amount</Trans>}
                     </ThemedText.Label>
 
                     <CurrencyInputPanel
@@ -781,13 +782,13 @@ export default function AddLiquidity({
                               feeAmount={feeAmount}
                               ticksAtLimit={ticksAtLimit}
                             />
-                            {!noLiquidity && (
+                            {/* {!noLiquidity && (
                               <PresetsButtons
                                 setFullRange={() => {
                                   setShowCapitalEfficiencyWarning(true)
                                 }}
                               />
-                            )}
+                            )} */}
                           </AutoColumn>
                         </StackedItem>
 

@@ -102,6 +102,7 @@ export function AddRemoveTabs({
   defaultSlippage,
   positionID,
   children,
+  longterm,
 }: {
   adding: boolean
   creating: boolean
@@ -109,6 +110,7 @@ export function AddRemoveTabs({
   positionID?: string | undefined
   showBackLink?: boolean
   children?: ReactNode | undefined
+  longterm?: boolean | undefined
 }) {
   const theme = useTheme()
   // reset states on back
@@ -145,6 +147,8 @@ export function AddRemoveTabs({
             <Trans>Create a pair</Trans>
           ) : adding ? (
             <Trans>Add Liquidity</Trans>
+          ) : longterm ? (
+            <Trans>Long Term Swap</Trans>
           ) : (
             <Trans>Remove Liquidity</Trans>
           )}

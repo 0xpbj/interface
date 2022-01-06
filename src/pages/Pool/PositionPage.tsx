@@ -821,7 +821,7 @@ export function PositionPage({
                 <LightCard padding="12px" width="100%">
                   <AutoColumn gap="8px" justify="center">
                     <ExtentsText>
-                      <Trans>Min price</Trans>
+                      <Trans>Min Blocks</Trans>
                     </ExtentsText>
                     <ThemedText.MediumHeader textAlign="center">
                       {formatTickPrice(priceLower, tickAtLimit, Bound.LOWER)}
@@ -845,7 +845,7 @@ export function PositionPage({
                 <LightCard padding="12px" width="100%">
                   <AutoColumn gap="8px" justify="center">
                     <ExtentsText>
-                      <Trans>Max price</Trans>
+                      <Trans>Max Blocks</Trans>
                     </ExtentsText>
                     <ThemedText.MediumHeader textAlign="center">
                       {formatTickPrice(priceUpper, tickAtLimit, Bound.UPPER)}

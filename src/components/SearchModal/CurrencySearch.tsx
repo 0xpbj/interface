@@ -1,12 +1,14 @@
 // eslint-disable-next-line no-restricted-imports
-import { t, Trans } from '@lingui/macro'
+// import { t, Trans } from '@lingui/macro'
+import { Trans } from '@lingui/macro'
 import { Currency, Token } from '@uniswap/sdk-core'
 import useDebounce from 'hooks/useDebounce'
 import { useOnClickOutside } from 'hooks/useOnClickOutside'
 import useTheme from 'hooks/useTheme'
 import useToggle from 'hooks/useToggle'
-import { KeyboardEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Edit } from 'react-feather'
+// import { KeyboardEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+// import { Edit } from 'react-feather'
 import ReactGA from 'react-ga'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { FixedSizeList } from 'react-window'
@@ -21,16 +23,19 @@ import {
   useToken,
 } from '../../hooks/Tokens'
 import { useActiveWeb3React } from '../../hooks/web3'
-import { ButtonText, CloseIcon, IconWrapper, ThemedText } from '../../theme'
+// import { ButtonText, CloseIcon, IconWrapper, ThemedText } from '../../theme'
+import { CloseIcon, ThemedText } from '../../theme'
 import { isAddress } from '../../utils'
 import Column from '../Column'
-import Row, { RowBetween, RowFixed } from '../Row'
+// import Row, { RowBetween, RowFixed } from '../Row'
+import { RowBetween } from '../Row'
 import CommonBases from './CommonBases'
 import CurrencyList from './CurrencyList'
 import { filterTokens, useSortedTokensByQuery } from './filtering'
 import ImportRow from './ImportRow'
 import { useTokenComparator } from './sorting'
-import { PaddedColumn, SearchInput, Separator } from './styleds'
+// import { PaddedColumn, SearchInput, Separator } from './styleds'
+import { PaddedColumn, Separator } from './styleds'
 
 const ContentWrapper = styled(Column)`
   width: 100%;
@@ -189,7 +194,7 @@ export function CurrencySearch({
           </Text>
           <CloseIcon onClick={onDismiss} />
         </RowBetween>
-        <Row>
+        {/* <Row>
           <SearchInput
             type="text"
             id="token-search-input"
@@ -200,7 +205,7 @@ export function CurrencySearch({
             onChange={handleInput}
             onKeyDown={handleEnter}
           />
-        </Row>
+        </Row> */}
         {showCommonBases && (
           <CommonBases chainId={chainId} onSelect={handleCurrencySelect} selectedCurrency={selectedCurrency} />
         )}
@@ -236,7 +241,7 @@ export function CurrencySearch({
           </ThemedText.Main>
         </Column>
       )}
-      <Footer>
+      {/* <Footer>
         <Row justify="center">
           <ButtonText onClick={showManageView} color={theme.primary1} className="list-token-manage-button">
             <RowFixed>
@@ -249,7 +254,7 @@ export function CurrencySearch({
             </RowFixed>
           </ButtonText>
         </Row>
-      </Footer>
+      </Footer> */}
     </ContentWrapper>
   )
 }

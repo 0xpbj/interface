@@ -53,7 +53,7 @@ export default function RangeSelector({
           incrementDisabled={ticksAtLimit[isSorted ? Bound.LOWER : Bound.UPPER]}
           feeAmount={feeAmount}
           label={leftPrice ? `${currencyB?.symbol}` : '-'}
-          title={<Trans>Min Price</Trans>}
+          title={<Trans>Min Blocks</Trans>}
           tokenA={currencyA?.symbol}
           tokenB={currencyB?.symbol}
         />
@@ -69,7 +69,7 @@ export default function RangeSelector({
           label={rightPrice ? `${currencyB?.symbol}` : '-'}
           tokenA={currencyA?.symbol}
           tokenB={currencyB?.symbol}
-          title={<Trans>Max Price</Trans>}
+          title={<Trans>Max Blocks</Trans>}
         />
       </RowBetween>
     </AutoColumn>

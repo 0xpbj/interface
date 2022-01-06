@@ -17,7 +17,7 @@ import { HideSmall, ThemedText } from 'theme'
 import { AdvancedSwapDetails } from './AdvancedSwapDetails'
 import GasEstimateBadge, { SUPPORTED_GAS_ESTIMATE_CHAIN_IDS } from './GasEstimateBadge'
 import { ResponsiveTooltipContainer } from './styleds'
-import SwapRoute from './SwapRoute'
+// import SwapRoute from './SwapRoute'
 import TradePrice from './TradePrice'
 
 const Wrapper = styled(Row)`
@@ -193,7 +193,7 @@ export default function SwapDetailsDropdown({
                 <AdvancedSwapDetails trade={trade} allowedSlippage={allowedSlippage} syncing={syncing} />
               </StyledCard>
             ) : null}
-            {trade ? <SwapRoute trade={trade} syncing={syncing} /> : null}
+            {/* {trade ? <SwapRoute trade={trade} syncing={syncing} /> : null} */}
           </AutoColumn>
         </AnimatedDropdown>
       </AutoColumn>

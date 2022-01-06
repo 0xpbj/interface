@@ -123,7 +123,7 @@ export const PositionPreview = ({
           <LightCard width="48%" padding="8px">
             <AutoColumn gap="4px" justify="center">
               <ThemedText.Main fontSize="12px">
-                <Trans>Min Price</Trans>
+                <Trans>Min Blocks</Trans>
               </ThemedText.Main>
               <ThemedText.MediumHeader textAlign="center">{`${formatTickPrice(
                 priceLower,
@@ -144,7 +144,7 @@ export const PositionPreview = ({
           <LightCard width="48%" padding="8px">
             <AutoColumn gap="4px" justify="center">
               <ThemedText.Main fontSize="12px">
-                <Trans>Max Price</Trans>
+                <Trans>Max Blocks</Trans>
               </ThemedText.Main>
               <ThemedText.MediumHeader textAlign="center">{`${formatTickPrice(
                 priceUpper,

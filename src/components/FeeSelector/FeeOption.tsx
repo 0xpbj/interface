@@ -35,7 +35,7 @@ export function FeeOption({ feeAmount, active, poolState, distributions, onClick
       <AutoColumn gap="sm" justify="flex-start">
         <AutoColumn justify="flex-start" gap="6px">
           <ResponsiveText>
-            <Trans>{FEE_AMOUNT_DETAIL[feeAmount].label}%</Trans>
+            <Trans>{FEE_AMOUNT_DETAIL[feeAmount].label} blocks</Trans>
           </ResponsiveText>
           <ThemedText.Main fontWeight={400} fontSize="12px" textAlign="left">
             {FEE_AMOUNT_DETAIL[feeAmount].description}

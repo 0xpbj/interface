@@ -117,6 +117,12 @@ export default function App() {
                   path="/add/:currencyIdA?/:currencyIdB?/:feeAmount?"
                   component={RedirectDuplicateTokenIds}
                 />
+                <Route
+                  exact
+                  strict
+                  path="/ltswap/:currencyIdA?/:currencyIdB?/:feeAmount?"
+                  component={RedirectDuplicateTokenIds}
+                />
 
                 <Route
                   exact
