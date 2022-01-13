@@ -6,7 +6,7 @@ import { ApplicationModal, setOpenModal } from '../../state/application/reducer'
 
 // Redirects to swap but only replace the pathname
 export function RedirectPathToSwapOnly({ location }: RouteComponentProps) {
-  return <Redirect to={{ ...location, pathname: '/swap' }} />
+  return <Redirect to={{ ...location, pathname: '/ltswap/ETH/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }} />
 }
 
 // Redirects from the /swap/:outputCurrency path to the /swap?outputCurrency=:outputCurrency format
@@ -22,7 +22,7 @@ export function RedirectToSwap(props: RouteComponentProps<{ outputCurrency: stri
     <Redirect
       to={{
         ...props.location,
-        pathname: '/swap',
+        pathname: '/ltswap/ETH/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
         search:
           search && search.length > 1
             ? `${search}&outputCurrency=${outputCurrency}`

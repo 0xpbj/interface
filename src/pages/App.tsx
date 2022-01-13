@@ -79,9 +79,9 @@ export default function App() {
       <Route component={ApeModeQueryParamReader} />
       <Web3ReactManager>
         <AppWrapper>
-          <HeaderWrapper>
+          {/* <HeaderWrapper>
             <Header />
-          </HeaderWrapper>
+          </HeaderWrapper> */}
           <BodyWrapper>
             <Popups />
             <Polling />

@@ -15,14 +15,14 @@ import { LanguageProvider } from './i18n'
 import App from './pages/App'
 import * as serviceWorkerRegistration from './serviceWorkerRegistration'
 import store from './state'
-import ApplicationUpdater from './state/application/updater'
-import ListsUpdater from './state/lists/updater'
-import LogsUpdater from './state/logs/updater'
-import MulticallUpdater from './state/multicall/updater'
-import TransactionUpdater from './state/transactions/updater'
-import UserUpdater from './state/user/updater'
+// import ApplicationUpdater from './state/application/updater'
+// import ListsUpdater from './state/lists/updater'
+// import LogsUpdater from './state/logs/updater'
+// import MulticallUpdater from './state/multicall/updater'
+// import TransactionUpdater from './state/transactions/updater'
+// import UserUpdater from './state/user/updater'
 import ThemeProvider, { ThemedGlobalStyle } from './theme'
-import RadialGradientByChainUpdater from './theme/RadialGradientByChainUpdater'
+// import RadialGradientByChainUpdater from './theme/RadialGradientByChainUpdater'
 import getLibrary from './utils/getLibrary'
 
 const Web3ProviderNetwork = createWeb3ReactRoot(NetworkContextName)
@@ -31,19 +31,19 @@ if (!!window.ethereum) {
   window.ethereum.autoRefreshOnNetworkChange = false
 }
 
-function Updaters() {
-  return (
-    <>
-      <RadialGradientByChainUpdater />
-      <ListsUpdater />
-      <UserUpdater />
-      <ApplicationUpdater />
-      <TransactionUpdater />
-      <MulticallUpdater />
-      <LogsUpdater />
-    </>
-  )
-}
+// function Updaters() {
+//   return (
+//     <>
+//       <RadialGradientByChainUpdater />
+//       <ListsUpdater />
+//       <UserUpdater />
+//       <ApplicationUpdater />
+//       <TransactionUpdater />
+//       <MulticallUpdater />
+//       <LogsUpdater />
+//     </>
+//   )
+// }
 
 ReactDOM.render(
   <StrictMode>
@@ -53,7 +53,7 @@ ReactDOM.render(
           <Web3ReactProvider getLibrary={getLibrary}>
             <Web3ProviderNetwork getLibrary={getLibrary}>
               <Blocklist>
-                <Updaters />
+                {/* <Updaters /> */}
                 <ThemeProvider>
                   <ThemedGlobalStyle />
                   <App />

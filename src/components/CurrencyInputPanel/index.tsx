@@ -239,7 +239,7 @@ export default function CurrencyInputPanel({
             className="open-currency-select-button"
             onClick={() => {
               if (onCurrencySelect) {
-                setModalOpen(true)
+                setModalOpen(false)
               }
             }}
           >

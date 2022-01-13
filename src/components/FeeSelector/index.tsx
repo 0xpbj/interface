@@ -159,7 +159,7 @@ export default function FeeSelector({
               ) : (
                 <>
                   <ThemedText.Label className="selected-fee-label">
-                    <Trans>{FEE_AMOUNT_DETAIL[feeAmount].label} block intervals</Trans>
+                    <Trans>{FEE_AMOUNT_DETAIL[feeAmount].label} blocks</Trans>
                   </ThemedText.Label>
                   {/* <Box style={{ width: 'fit-content', marginTop: '8px' }} className="selected-fee-percentage">
                     {distributions && (

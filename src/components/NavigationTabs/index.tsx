@@ -125,7 +125,7 @@ export function AddRemoveTabs({
   return (
     <Tabs>
       <RowBetween style={{ padding: '1rem 1rem 0 1rem' }}>
-        <StyledHistoryLink
+        {/* <StyledHistoryLink
           to={poolLink}
           onClick={() => {
             if (adding) {
@@ -137,10 +137,10 @@ export function AddRemoveTabs({
           flex={children ? '1' : undefined}
         >
           <StyledArrowLeft stroke={theme.text2} />
-        </StyledHistoryLink>
+        </StyledHistoryLink> */}
         <ThemedText.MediumHeader
-          fontWeight={500}
-          fontSize={20}
+          fontWeight={700}
+          fontSize={30}
           style={{ flex: '1', margin: 'auto', textAlign: children ? 'start' : 'center' }}
         >
           {creating ? (
@@ -154,7 +154,7 @@ export function AddRemoveTabs({
           )}
         </ThemedText.MediumHeader>
         <Box style={{ marginRight: '.5rem' }}>{children}</Box>
-        <SettingsTab placeholderSlippage={defaultSlippage} />
+        {/* <SettingsTab placeholderSlippage={defaultSlippage} /> */}
       </RowBetween>
     </Tabs>
   )
