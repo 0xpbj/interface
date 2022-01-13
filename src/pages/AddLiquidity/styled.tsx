@@ -15,10 +15,13 @@ export const PageWrapper = styled(BodyWrapper)<{ wide: boolean }>`
   `};
 `
 
+// Ugly below--changed min-width to 640px b/c 480px was wrapping "Long Term Swap" and
+// insufficient time to correct flex 1 / layout of modal nav back.
+//
 export const Wrapper = styled.div`
   position: relative;
   padding: 26px 16px;
-  min-width: 480px;
+  min-width: 640px;
 
   ${({ theme }) => theme.mediaWidth.upToMedium`
     min-width: 400px;

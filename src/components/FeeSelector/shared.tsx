@@ -8,23 +8,23 @@ export const FEE_AMOUNT_DETAIL: Record<
   { label: string; description: ReactNode; supportedChains: SupportedChainId[] }
 > = {
   [FeeAmount.LOWEST]: {
-    label: '1',
+    label: '100',
     description: <Trans>Best for small trades.</Trans>,
     supportedChains: [SupportedChainId.MAINNET],
   },
   [FeeAmount.LOW]: {
-    label: '5',
+    label: '1000',
     description: <Trans>Best for med trades.</Trans>,
     supportedChains: ALL_SUPPORTED_CHAIN_IDS,
   },
   [FeeAmount.MEDIUM]: {
-    label: '10',
+    label: '10000',
     description: <Trans>Best for large trades.</Trans>,
     supportedChains: ALL_SUPPORTED_CHAIN_IDS,
   },
   [FeeAmount.HIGH]: {
-    label: '20',
-    description: <Trans>Best for extra large trades.</Trans>,
+    label: 'Automatic',
+    description: <Trans>Best for Prabhaav &amp; you</Trans>,
     supportedChains: ALL_SUPPORTED_CHAIN_IDS,
   },
 }

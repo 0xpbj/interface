@@ -1,4 +1,5 @@
-import { io } from 'socket.io-client'
+import { Pause } from 'react-feather'
+import { io, Socket } from 'socket.io-client'
 
 import * as ds from '../utils/debugScopes'
 const log = ds.getLog('socketClient')
@@ -56,7 +57,6 @@ type CommandType = {
 }
 
 export const testAsClient = async () => {
-  debugger
   log.debug('****************************Testing client mode ...')
   await delayMs(3000)
   const clientSocket = io(_serverUrl())
@@ -127,4 +127,67 @@ export const testAsClient = async () => {
   clientSocket.on('connect_error', (error) => {
     log.warn(`Server connection error.\n${error}`)
   })
+}
+
+
+
+
+let _cmdId = 0
+let _clientSocket: Socket | undefined = undefined
+
+export const initSimulator = async ():Promise<void> => 
+{
+  if (!_clientSocket) {
+    _clientSocket = io(_serverUrl())
+
+    _clientSocket.on('connect', async () => {
+      log.debug('Connected as client.')
+    })
+
+    _clientSocket.on('status', (statusObj) => {
+      log.debug(`Received status:\n${JSON.stringify(statusObj, null, 2)}`)
+    })
+
+    _clientSocket.on('disconnect', (reason) => {
+      log.warn(`Server disconnected because ${reason}.`)
+    })
+
+    _clientSocket.on('connect_error', (error) => {
+      log.warn(`Server connection error.\n${error}`)
+    })
+  }
+}
+
+export const play = async(tokenA: number, 
+                          tokenB: number,
+                          numIntervals: number,
+                          blockInterval: number): Promise<void> => {
+
+  log.debug('Running simulation:')
+
+  const cmdObj = {
+    id: _cmdId++,
+    command: 'simulation-play',
+    args: {
+      tokenA: 1000000, // Sell 10M token A for tokenB in an LT Swap
+      tokenB: 0,
+      numIntervals: 10,
+      blockInterval: 10,
+      /* more options possible (and in place, get this working first) */
+    },
+  }
+  await runClientCommand(_clientSocket, cmdObj)
+
+}
+
+export const pause = async (): Promise<void> => {
+  log.debug('Pausing simulation:')
+  const cmdObj = { id: _cmdId++, command: 'simulation-pause' }
+  await runClientCommand(_clientSocket, cmdObj)
+}
+
+export const reset = async(): Promise<void> => {
+  log.debug('Resetting simulation:')
+  const cmdObj = { id: _cmdId++, command: 'simulation-reset', args: {} }
+  await runClientCommand(_clientSocket, cmdObj)
 }

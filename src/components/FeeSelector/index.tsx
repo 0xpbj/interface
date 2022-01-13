@@ -159,9 +159,9 @@ export default function FeeSelector({
               ) : (
                 <>
                   <ThemedText.Label className="selected-fee-label">
-                    <Trans>{FEE_AMOUNT_DETAIL[feeAmount].label} block interval</Trans>
+                    <Trans>{FEE_AMOUNT_DETAIL[feeAmount].label} block intervals</Trans>
                   </ThemedText.Label>
-                  <Box style={{ width: 'fit-content', marginTop: '8px' }} className="selected-fee-percentage">
+                  {/* <Box style={{ width: 'fit-content', marginTop: '8px' }} className="selected-fee-percentage">
                     {distributions && (
                       <FeeTierPercentageBadge
                         distributions={distributions}
@@ -169,7 +169,7 @@ export default function FeeSelector({
                         poolState={poolsByFeeTier[feeAmount]}
                       />
                     )}
-                  </Box>
+                  </Box> */}
                 </>
               )}
             </AutoColumn>

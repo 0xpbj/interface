@@ -29,22 +29,26 @@ interface FeeOptionProps {
   onClick: () => void
 }
 
-export function FeeOption({ feeAmount, active, poolState, distributions, onClick }: FeeOptionProps) {
+export function FeeOption({ feeAmount, active, poolState, distributions, onClick }: FeeOptionProps) 
+{
+  let label = FEE_AMOUNT_DETAIL[feeAmount].label
+  label += (label !== 'Automatic') ? ' blocks' : ''
+
   return (
     <ButtonRadioChecked active={active} onClick={onClick}>
       <AutoColumn gap="sm" justify="flex-start">
         <AutoColumn justify="flex-start" gap="6px">
           <ResponsiveText>
-            <Trans>{FEE_AMOUNT_DETAIL[feeAmount].label} blocks</Trans>
+            <Trans>{label}</Trans>
           </ResponsiveText>
           <ThemedText.Main fontWeight={400} fontSize="12px" textAlign="left">
             {FEE_AMOUNT_DETAIL[feeAmount].description}
           </ThemedText.Main>
         </AutoColumn>
 
-        {distributions && (
+        {/* {distributions && (
           <FeeTierPercentageBadge distributions={distributions} feeAmount={feeAmount} poolState={poolState} />
-        )}
+        )} */}
       </AutoColumn>
     </ButtonRadioChecked>
   )
