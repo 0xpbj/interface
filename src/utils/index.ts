@@ -7,6 +7,30 @@ import { FeeAmount } from '@uniswap/v3-sdk'
 
 import { TokenAddressMap } from '../state/lists/hooks'
 
+export function getEtherscanLink(
+  chainId: number,
+  data: string,
+  type: 'transaction' | 'token' | 'address' | 'block'
+): string {
+  const prefix = 'https://etherscan.io'
+
+  switch (type) {
+    case 'transaction': {
+      return `${prefix}/tx/${data}`
+    }
+    case 'token': {
+      return `${prefix}/token/${data}`
+    }
+    case 'block': {
+      return `${prefix}/block/${data}`
+    }
+    case 'address':
+    default: {
+      return `${prefix}/address/${data}`
+    }
+  }
+}
+
 // returns the checksummed address if the address is valid, otherwise returns false
 export function isAddress(value: any): string | false {
   try {
