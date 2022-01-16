@@ -375,26 +375,34 @@ export default function AddLiquidity({
             {/* </ResponsiveTwoColumns> */}
           </Wrapper>
         </PageWrapper>
-        <TYPE.main fontSize="24px">Swap Graph</TYPE.main>
-        <DarkGreyCard>
-          <LineChart
-            data={formattedTvlData}
-            setLabel={setValueLabel}
-            color={'#2172E5'}
-            minHeight={340}
-            setValue={setLatestValue}
-          />
-          {/*value={formattedTvlData ? formatDollarAmount(formattedTvlData[formattedTvlData.length - 1]?.value) : 0}
-          label={valueLabel}*/}
-        </DarkGreyCard>
-        <TYPE.main fontSize="24px">Transactions</TYPE.main>
-        <TransactionTable transactions={sampleTransactions} />
-        {addIsUnsupported && (
-          <UnsupportedCurrencyFooter
-            show={addIsUnsupported}
-            currencies={[currencies.CURRENCY_A, currencies.CURRENCY_B]}
-          />
-        )}
+
+        <TYPE.main fontSize="24px" style={{marginTop:'24px'}}>Swap Graph</TYPE.main>
+        <PageWrapper wide={!hasExistingPosition}>
+          <Wrapper>
+            <LineChart
+              data={formattedTvlData}
+              setLabel={setValueLabel}
+              color={'#2172E5'}
+              minHeight={340}
+              setValue={setLatestValue}
+            />
+            {/*value={formattedTvlData ? formatDollarAmount(formattedTvlData[formattedTvlData.length - 1]?.value) : 0}
+            label={valueLabel}*/}
+          </Wrapper>
+        </PageWrapper>
+
+        <TYPE.main fontSize="24px" style={{marginTop:'24px'}}>Transactions</TYPE.main>
+        <PageWrapper wide={!hasExistingPosition}>
+          <Wrapper>
+            <TransactionTable transactions={sampleTransactions} />
+            {addIsUnsupported && (
+              <UnsupportedCurrencyFooter
+                show={addIsUnsupported}
+                currencies={[currencies.CURRENCY_A, currencies.CURRENCY_B]}
+              />
+            )}
+          </Wrapper>
+        </PageWrapper>
       </ScrollablePage>
       <SwitchLocaleLink />
     </>
