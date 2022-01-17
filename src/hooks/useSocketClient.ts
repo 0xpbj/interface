@@ -174,6 +174,8 @@ export const play = async(tokenA: number,
       numIntervals: 10,
       blockInterval: 10,
       /* more options possible (and in place, get this working first) */
+      arbitrage: false,
+      useMarketData: true
     },
   }
   await runClientCommand(_clientSocket, cmdObj)
