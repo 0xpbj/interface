@@ -169,13 +169,13 @@ export const play = async(tokenA: number,
     id: _cmdId++,
     command: 'simulation-play',
     args: {
-      tokenA: 1000000, // Sell 1M token A for tokenB in an LT Swap
-      tokenB: 0,
-      numIntervals: 10,
-      blockInterval: 10,
+      tokenA, // Sell 1M token A for tokenB in an LT Swap
+      tokenB,
+      numIntervals,
+      blockInterval,
       /* more options possible (and in place, get this working first) */
       arbitrage: false,
-      useMarketData: true
+      useMarketData: true,
     },
   }
   await runClientCommand(_clientSocket, cmdObj)

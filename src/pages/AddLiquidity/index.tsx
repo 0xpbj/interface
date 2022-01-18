@@ -33,6 +33,8 @@ import { ThemedText } from '../../theme'
 import { currencyId } from '../../utils/currencyId'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
 import { CurrencyDropdown, DynamicSection, MediumOnly, PageWrapper, ScrollablePage, Wrapper } from './styled'
+import { useSetUserSlippageTolerance, useUserSlippageTolerance, useUserTransactionTTL } from 'state/user/hooks'
+
 
 const DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE = new Percent(50, 10_000)
 
@@ -102,9 +104,18 @@ export default function AddLiquidity({
 
   initSimulator()
 
+  const userSlippageTolerance = useUserSlippageTolerance()
+
   const handlePlay = async () => {
+    let numIntervals = 0
+    const blockInterval = 10
     const amt = parseFloat(formattedAmounts[Field.CURRENCY_A])
-    await play(amt, 0, 10, 10)
+    if (userSlippageTolerance !== 'auto') {
+      numIntervals = Number(userSlippageTolerance.toFixed(0)) / blockInterval
+      await play(amt, 0, numIntervals, blockInterval)
+    } else {
+      await play(amt, 0, 10, 10)
+    }
   }
 
   const handlePause = async () => {
@@ -447,7 +458,6 @@ export default function AddLiquidity({
           Transactions
         </TYPE.main>
         <PageWrapper wide={!hasExistingPosition}>
-          <Wrapper>
             <TransactionTable transactions={sampleTransactions} />
             {addIsUnsupported && (
               <UnsupportedCurrencyFooter
@@ -455,7 +465,6 @@ export default function AddLiquidity({
                 currencies={[currencies.CURRENCY_A, currencies.CURRENCY_B]}
               />
             )}
-          </Wrapper>
         </PageWrapper>
       </ScrollablePage>
       <SwitchLocaleLink />

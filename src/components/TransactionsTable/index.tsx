@@ -160,7 +160,7 @@ export default function TransactionTable({
   }, [maxItems, transactions])
 
   // filter on txn type
-  const [txFilter, setTxFilter] = useState<TransactionType | undefined>(undefined)
+  const [txFilter, setTxFilter] = useState<TransactionType | undefined>(TransactionType.SWAP)
 
   const sortedTransactions = useMemo(() => {
     return transactions
@@ -206,14 +206,14 @@ export default function TransactionTable({
       <AutoColumn gap="16px">
         <ResponsiveGrid>
           <RowFixed>
-            <SortText
+            {/* <SortText
               onClick={() => {
                 setTxFilter(undefined)
               }}
               active={txFilter === undefined}
             >
               All
-            </SortText>
+            </SortText> */}
             <SortText
               onClick={() => {
                 setTxFilter(TransactionType.SWAP)
@@ -222,7 +222,7 @@ export default function TransactionTable({
             >
               Swaps
             </SortText>
-            <SortText
+            {/* <SortText
               onClick={() => {
                 setTxFilter(TransactionType.MINT)
               }}
@@ -237,7 +237,7 @@ export default function TransactionTable({
               active={txFilter === TransactionType.BURN}
             >
               Removes
-            </SortText>
+            </SortText> */}
           </RowFixed>
           <ClickableText color={theme.text2} onClick={() => handleSort(SORT_FIELD.amountUSD)} end={1}>
             Total Value {arrow(SORT_FIELD.amountUSD)}
