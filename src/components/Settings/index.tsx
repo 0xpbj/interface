@@ -4,33 +4,30 @@ import { Percent } from '@uniswap/sdk-core'
 import { useActiveWeb3React } from 'hooks/web3'
 import { useContext, useRef, useState } from 'react'
 import { Settings, X } from 'react-feather'
-// import ReactGA from 'react-ga'
+import ReactGA from 'react-ga'
 import { Text } from 'rebass'
-// import { AUTO_ROUTER_SUPPORTED_CHAINS } from 'state/routing/clientSideSmartOrderRouter/constants'
+import { AUTO_ROUTER_SUPPORTED_CHAINS } from 'state/routing/clientSideSmartOrderRouter/constants'
 import styled, { ThemeContext } from 'styled-components/macro'
 
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { useModalOpen, useToggleSettingsMenu } from '../../state/application/hooks'
 import { ApplicationModal } from '../../state/application/reducer'
 import { useClientSideRouter, useExpertModeManager } from '../../state/user/hooks'
-// import { ThemedText } from '../../theme'
+import { ThemedText } from '../../theme'
 import { ButtonError } from '../Button'
 import { AutoColumn } from '../Column'
 import Modal from '../Modal'
-// import QuestionHelper from '../QuestionHelper'
-// import { RowBetween, RowFixed } from '../Row'
-import { RowBetween } from '../Row'
-// import Toggle from '../Toggle'
+import QuestionHelper from '../QuestionHelper'
+import { RowBetween, RowFixed } from '../Row'
+import Toggle from '../Toggle'
 import TransactionSettings from '../TransactionSettings'
 
 const StyledMenuIcon = styled(Settings)`
   height: 20px;
   width: 20px;
-
   > * {
     stroke: ${({ theme }) => theme.text1};
   }
-
   :hover {
     opacity: 0.7;
   }
@@ -42,7 +39,6 @@ const StyledCloseIcon = styled(X)`
   :hover {
     cursor: pointer;
   }
-
   > * {
     stroke: ${({ theme }) => theme.text1};
   }
@@ -58,7 +54,6 @@ const StyledMenuButton = styled.button`
   padding: 0;
   border-radius: 0.5rem;
   height: 20px;
-
   :hover,
   :focus {
     cursor: pointer;
@@ -96,11 +91,9 @@ const MenuFlyout = styled.span`
   top: 2rem;
   right: 0rem;
   z-index: 100;
-
   ${({ theme }) => theme.mediaWidth.upToMedium`
     min-width: 18.125rem;
   `};
-
   user-select: none;
 `
 
@@ -140,46 +133,6 @@ export default function SettingsTab({ placeholderSlippage }: { placeholderSlippa
   return (
     // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30451
     <StyledMenu ref={node as any}>
-      <Modal isOpen={showConfirmation} onDismiss={() => setShowConfirmation(false)} maxHeight={100}>
-        <ModalContentWrapper>
-          <AutoColumn gap="lg">
-            <RowBetween style={{ padding: '0 2rem' }}>
-              <div />
-              <Text fontWeight={500} fontSize={20}>
-                <Trans>Are you sure?</Trans>
-              </Text>
-              <StyledCloseIcon onClick={() => setShowConfirmation(false)} />
-            </RowBetween>
-            <Break />
-            <AutoColumn gap="lg" style={{ padding: '0 2rem' }}>
-              <Text fontWeight={500} fontSize={20}>
-                <Trans>
-                  Expert mode turns off the confirm transaction prompt and allows high slippage trades that often result
-                  in bad rates and lost funds.
-                </Trans>
-              </Text>
-              <Text fontWeight={600} fontSize={20}>
-                <Trans>ONLY USE THIS MODE IF YOU KNOW WHAT YOU ARE DOING.</Trans>
-              </Text>
-              <ButtonError
-                error={true}
-                padding={'12px'}
-                onClick={() => {
-                  const confirmWord = t`confirm`
-                  if (window.prompt(t`Please type the word "${confirmWord}" to enable expert mode.`) === confirmWord) {
-                    toggleExpertMode()
-                    setShowConfirmation(false)
-                  }
-                }}
-              >
-                <Text fontSize={20} fontWeight={500} id="confirm-expert-mode">
-                  <Trans>Turn On Expert Mode</Trans>
-                </Text>
-              </ButtonError>
-            </AutoColumn>
-          </AutoColumn>
-        </ModalContentWrapper>
-      </Modal>
       <StyledMenuButton onClick={toggle} id="open-settings-dialog-button" aria-label={t`Transaction Settings`}>
         <StyledMenuIcon />
         {expertMode ? (
@@ -194,17 +147,17 @@ export default function SettingsTab({ placeholderSlippage }: { placeholderSlippa
         <MenuFlyout>
           <AutoColumn gap="md" style={{ padding: '1rem' }}>
             <Text fontWeight={600} fontSize={14}>
-              <Trans>Transaction Settings</Trans>
+              <Trans>Trade Settings</Trans>
             </Text>
             <TransactionSettings placeholderSlippage={placeholderSlippage} />
-            {/* <Text fontWeight={600} fontSize={14}>
-              <Trans>Interface Settings</Trans>
-            </Text> */}
-            {/* {chainId && AUTO_ROUTER_SUPPORTED_CHAINS.includes(chainId) && (
+            <Text fontWeight={600} fontSize={14}>
+              <Trans>Arbitrage Settings</Trans>
+            </Text>
+            {chainId && AUTO_ROUTER_SUPPORTED_CHAINS.includes(chainId) && (
               <RowBetween>
                 <RowFixed>
                   <ThemedText.Black fontWeight={400} fontSize={14} color={theme.text2}>
-                    <Trans>Auto Router API</Trans>
+                    <Trans>Simulate Arbitrage</Trans>
                   </ThemedText.Black>
                   <QuestionHelper text={<Trans>Use the Uniswap Labs API to get faster quotes.</Trans>} />
                 </RowFixed>
@@ -212,19 +165,15 @@ export default function SettingsTab({ placeholderSlippage }: { placeholderSlippa
                   id="toggle-optimized-router-button"
                   isActive={!clientSideRouter}
                   toggle={() => {
-                    ReactGA.event({
-                      category: 'Routing',
-                      action: clientSideRouter ? 'enable routing API' : 'disable routing API',
-                    })
                     setClientSideRouter(!clientSideRouter)
                   }}
                 />
               </RowBetween>
-            )} */}
-            {/* <RowBetween>
+            )}
+            <RowBetween>
               <RowFixed>
                 <ThemedText.Black fontWeight={400} fontSize={14} color={theme.text2}>
-                  <Trans>Expert Mode</Trans>
+                  <Trans>Historical Trade Data</Trans>
                 </ThemedText.Black>
                 <QuestionHelper
                   text={
@@ -242,12 +191,12 @@ export default function SettingsTab({ placeholderSlippage }: { placeholderSlippa
                         setShowConfirmation(false)
                       }
                     : () => {
-                        toggle()
-                        setShowConfirmation(true)
+                        toggleExpertMode()
+                        // setShowConfirmation(true)
                       }
                 }
               />
-            </RowBetween> */}
+            </RowBetween>
           </AutoColumn>
         </MenuFlyout>
       )}

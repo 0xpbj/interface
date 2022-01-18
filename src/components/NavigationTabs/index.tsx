@@ -154,7 +154,7 @@ export function AddRemoveTabs({
           )}
         </ThemedText.MediumHeader>
         <Box style={{ marginRight: '.5rem' }}>{children}</Box>
-        {/* <SettingsTab placeholderSlippage={defaultSlippage} /> */}
+        <SettingsTab placeholderSlippage={defaultSlippage} />
       </RowBetween>
     </Tabs>
   )

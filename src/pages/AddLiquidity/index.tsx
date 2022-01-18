@@ -1,24 +1,21 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { Trans } from '@lingui/macro'
-import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
+import { Currency, CurrencyAmount, Percent } from '@uniswap/sdk-core'
 import { FeeAmount } from '@uniswap/v3-sdk'
-import { DarkGreyCard } from 'components/Card'
 import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
-import {
-  useV3DerivedMintInfo,
-  useV3MintActionHandlers,
-  useV3MintState,
-} from 'state/mint/v3/hooks'
+import { useV3DerivedMintInfo, useV3MintActionHandlers, useV3MintState } from 'state/mint/v3/hooks'
 import { TYPE } from 'theme'
 import { unixToDate } from 'utils/date'
 
-import { ButtonLight } from '../../components/Button'
+import { ButtonLight, ButtonText } from '../../components/Button'
 import CurrencyInputPanel from '../../components/CurrencyInputPanel'
 import FeeSelector from '../../components/FeeSelector'
 import LineChart from '../../components/LineChart'
-import { RowBetween } from '../../components/Row'
+import { AddRemoveTabs } from '../../components/NavigationTabs'
+import RateToggle from '../../components/RateToggle'
+import Row, { RowBetween } from '../../components/Row'
 import { SwitchLocaleLink } from '../../components/SwitchLocaleLink'
 import TransactionTable from '../../components/TransactionsTable'
 import { sampleChartData } from '../../constants/sampleChartData'
@@ -31,11 +28,13 @@ import { initSimulator, pause, play, reset, testAsClient } from '../../hooks/use
 import { useUSDCValue } from '../../hooks/useUSDCPrice'
 import { useV3PositionFromTokenId } from '../../hooks/useV3Positions'
 import { useActiveWeb3React } from '../../hooks/web3'
-import { Field } from '../../state/mint/v3/actions'
+import { Bound, Field } from '../../state/mint/v3/actions'
 import { ThemedText } from '../../theme'
 import { currencyId } from '../../utils/currencyId'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
-import { CurrencyDropdown, DynamicSection, PageWrapper, ScrollablePage, Wrapper } from './styled'
+import { CurrencyDropdown, DynamicSection, MediumOnly, PageWrapper, ScrollablePage, Wrapper } from './styled'
+
+const DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE = new Percent(50, 10_000)
 
 export default function AddLiquidity({
   match: {
@@ -68,6 +67,8 @@ export default function AddLiquidity({
   const { independentField, typedValue } = useV3MintState()
 
   const {
+    ticks,
+    pricesAtTicks,
     dependentField,
     parsedAmounts,
     currencyBalances,
@@ -75,6 +76,8 @@ export default function AddLiquidity({
     currencies,
     depositADisabled,
     depositBDisabled,
+    ticksAtLimit,
+    invertPrice,
   } = useV3DerivedMintInfo(
     baseCurrency ?? undefined,
     quoteCurrency ?? undefined,
@@ -220,6 +223,18 @@ export default function AddLiquidity({
     }
   }, [sampleChartData])
 
+  const clearAll = useCallback(() => {
+    onFieldAInput('')
+    onFieldBInput('')
+    onLeftRangeInput('')
+    onRightRangeInput('')
+    history.push(`/add`)
+  }, [history, onFieldAInput, onFieldBInput, onLeftRangeInput, onRightRangeInput])
+
+  // get value and prices at ticks
+  const { [Bound.LOWER]: tickLower, [Bound.UPPER]: tickUpper } = ticks
+  const { [Bound.LOWER]: priceLower, [Bound.UPPER]: priceUpper } = pricesAtTicks
+
   const SimulateButtons = () => {
     return (
       <div>
@@ -250,8 +265,43 @@ export default function AddLiquidity({
   return (
     <>
       <ScrollablePage>
-        <TYPE.main fontSize="24px">Long Term Swap</TYPE.main>
         <PageWrapper wide={!hasExistingPosition}>
+          <AddRemoveTabs
+            creating={false}
+            adding={false}
+            longterm={true}
+            positionID={tokenId}
+            defaultSlippage={DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE}
+            showBackLink={!hasExistingPosition}
+          >
+            {!hasExistingPosition && (
+              <Row justifyContent="flex-end" style={{ width: 'fit-content', minWidth: 'fit-content' }}>
+                <MediumOnly>
+                  <ButtonText onClick={clearAll} margin="0 15px 0 0">
+                    <ThemedText.Blue fontSize="12px">
+                      <Trans>Clear All</Trans>
+                    </ThemedText.Blue>
+                  </ButtonText>
+                </MediumOnly>
+                {baseCurrency && quoteCurrency ? (
+                  <RateToggle
+                    currencyA={baseCurrency}
+                    currencyB={quoteCurrency}
+                    handleRateToggle={() => {
+                      if (!ticksAtLimit[Bound.LOWER] && !ticksAtLimit[Bound.UPPER]) {
+                        onLeftRangeInput((invertPrice ? priceLower : priceUpper?.invert())?.toSignificant(6) ?? '')
+                        onRightRangeInput((invertPrice ? priceUpper : priceLower?.invert())?.toSignificant(6) ?? '')
+                        onFieldAInput(formattedAmounts[Field.CURRENCY_B] ?? '')
+                      }
+                      history.push(
+                        `/add/${currencyIdB as string}/${currencyIdA as string}${feeAmount ? '/' + feeAmount : ''}`
+                      )
+                    }}
+                  />
+                ) : null}
+              </Row>
+            )}
+          </AddRemoveTabs>
           <Wrapper>
             {/* <ResponsiveTwoColumns wide={!hasExistingPosition}> */}
             {/* <AutoColumn gap="lg"> */}
@@ -376,7 +426,9 @@ export default function AddLiquidity({
           </Wrapper>
         </PageWrapper>
 
-        <TYPE.main fontSize="24px" style={{marginTop:'24px'}}>Swap Graph</TYPE.main>
+        <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
+          Swap Graph
+        </TYPE.main>
         <PageWrapper wide={!hasExistingPosition}>
           <Wrapper>
             <LineChart
@@ -391,7 +443,9 @@ export default function AddLiquidity({
           </Wrapper>
         </PageWrapper>
 
-        <TYPE.main fontSize="24px" style={{marginTop:'24px'}}>Transactions</TYPE.main>
+        <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
+          Transactions
+        </TYPE.main>
         <PageWrapper wide={!hasExistingPosition}>
           <Wrapper>
             <TransactionTable transactions={sampleTransactions} />

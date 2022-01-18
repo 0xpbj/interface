@@ -121,14 +121,15 @@ export default function TransactionSettings({ placeholderSlippage }: Transaction
     } else {
       const parsed = Math.floor(Number.parseFloat(value) * 100)
 
-      if (!Number.isInteger(parsed) || parsed < 0 || parsed > 5000) {
-        setUserSlippageTolerance('auto')
-        if (value !== '.') {
-          setSlippageError(SlippageError.InvalidInput)
-        }
-      } else {
-        setUserSlippageTolerance(new Percent(parsed, 10_000))
-      }
+      // if (!Number.isInteger(parsed) || parsed < 0 || parsed > 5000) {
+      //   setUserSlippageTolerance('auto')
+      //   if (value !== '.') {
+      //     setSlippageError(SlippageError.InvalidInput)
+      //   }
+      // } else {
+      //   setUserSlippageTolerance(new Percent(parsed, 10_000))
+      // }
+      setUserSlippageTolerance(new Percent(parsed, 10_000))
     }
   }
 
@@ -141,7 +142,7 @@ export default function TransactionSettings({ placeholderSlippage }: Transaction
     setDeadlineError(false)
 
     if (value.length === 0) {
-      setDeadline(DEFAULT_DEADLINE_FROM_NOW)
+      setDeadline(10000)
     } else {
       try {
         const parsed: number = Math.floor(Number.parseFloat(value) * 60)
@@ -164,13 +165,9 @@ export default function TransactionSettings({ placeholderSlippage }: Transaction
       <AutoColumn gap="sm">
         <RowFixed>
           <ThemedText.Black fontWeight={400} fontSize={14} color={theme.text2}>
-            <Trans>Slippage tolerance</Trans>
+            <Trans>Number of Blocks</Trans>
           </ThemedText.Black>
-          <QuestionHelper
-            text={
-              <Trans>Your transaction will revert if the price changes unfavorably by more than this percentage.</Trans>
-            }
-          />
+          <QuestionHelper text={<Trans>Your transaction will complete in the specified number of blocks.</Trans>} />
         </RowFixed>
         <RowBetween>
           <Option
@@ -183,21 +180,21 @@ export default function TransactionSettings({ placeholderSlippage }: Transaction
           </Option>
           <OptionCustom active={userSlippageTolerance !== 'auto'} warning={!!slippageError} tabIndex={-1}>
             <RowBetween>
-              {tooLow || tooHigh ? (
+              {/* {tooLow || tooHigh ? (
                 <SlippageEmojiContainer>
                   <span role="img" aria-label="warning">
                     ⚠️
                   </span>
                 </SlippageEmojiContainer>
-              ) : null}
+              ) : null} */}
               <Input
-                placeholder={placeholderSlippage.toFixed(2)}
+                placeholder={'1000'}
                 value={
                   slippageInput.length > 0
                     ? slippageInput
                     : userSlippageTolerance === 'auto'
                     ? ''
-                    : userSlippageTolerance.toFixed(2)
+                    : userSlippageTolerance.toFixed(0)
                 }
                 onChange={(e) => parseSlippageInput(e.target.value)}
                 onBlur={() => {
@@ -206,11 +203,10 @@ export default function TransactionSettings({ placeholderSlippage }: Transaction
                 }}
                 color={slippageError ? 'red' : ''}
               />
-              %
             </RowBetween>
           </OptionCustom>
         </RowBetween>
-        {slippageError || tooLow || tooHigh ? (
+        {/* {slippageError || tooLow || tooHigh ? (
           <RowBetween
             style={{
               fontSize: '14px',
@@ -226,23 +222,21 @@ export default function TransactionSettings({ placeholderSlippage }: Transaction
               <Trans>Your transaction may be frontrun</Trans>
             )}
           </RowBetween>
-        ) : null}
+        ) : null} */}
       </AutoColumn>
 
       {showCustomDeadlineRow && (
         <AutoColumn gap="sm">
           <RowFixed>
             <ThemedText.Black fontSize={14} fontWeight={400} color={theme.text2}>
-              <Trans>Transaction deadline</Trans>
+              <Trans>Delay between blocks</Trans>
             </ThemedText.Black>
-            <QuestionHelper
-              text={<Trans>Your transaction will revert if it is pending for more than this period of time.</Trans>}
-            />
+            <QuestionHelper text={<Trans>Amount of time delay between blocks.</Trans>} />
           </RowFixed>
           <RowFixed>
             <OptionCustom style={{ width: '80px' }} warning={!!deadlineError} tabIndex={-1}>
               <Input
-                placeholder={(DEFAULT_DEADLINE_FROM_NOW / 60).toString()}
+                placeholder={(DEFAULT_DEADLINE_FROM_NOW).toString()}
                 value={
                   deadlineInput.length > 0
                     ? deadlineInput
@@ -259,7 +253,7 @@ export default function TransactionSettings({ placeholderSlippage }: Transaction
               />
             </OptionCustom>
             <ThemedText.Body style={{ paddingLeft: '8px' }} fontSize={14}>
-              <Trans>minutes</Trans>
+              <Trans>ms</Trans>
             </ThemedText.Body>
           </RowFixed>
         </AutoColumn>

@@ -169,7 +169,7 @@ export const play = async(tokenA: number,
     id: _cmdId++,
     command: 'simulation-play',
     args: {
-      tokenA: 1000000, // Sell 10M token A for tokenB in an LT Swap
+      tokenA: 1000000, // Sell 1M token A for tokenB in an LT Swap
       tokenB: 0,
       numIntervals: 10,
       blockInterval: 10,
