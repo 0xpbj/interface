@@ -24,8 +24,13 @@ import {
   updateUserDarkMode,
   updateUserDeadline,
   updateUserExpertMode,
+  updateSimulateArbitrage,
+  updateMarketData,
+  updateMarketReserves,
   updateUserLocale,
   updateUserSlippageTolerance,
+  updateUserTradeDuration,
+  updateBlockDelay,
 } from './actions'
 
 function serializeToken(token: Token): SerializedToken {
@@ -93,6 +98,39 @@ export function useIsExpertMode(): boolean {
   return useAppSelector((state) => state.user.userExpertMode)
 }
 
+export function useSimulateArbitrage(): [boolean, () => void] {
+  const dispatch = useAppDispatch()
+  const simulateArbitrage = useAppSelector((state) => Boolean(state.user.simulateArbitrage))
+
+  const toggleSimulateArbitrage = useCallback(() => {
+    dispatch(updateSimulateArbitrage({ simulateArbitrage: !simulateArbitrage }))
+  }, [simulateArbitrage, dispatch])
+
+  return [simulateArbitrage, toggleSimulateArbitrage]
+}
+
+export function useMarketData(): [boolean, () => void] {
+  const dispatch = useAppDispatch()
+  const marketData = useAppSelector((state) => Boolean(state.user.marketData))
+
+  const toggleMarketData = useCallback(() => {
+    dispatch(updateMarketData({ marketData: !marketData }))
+  }, [marketData, dispatch])
+
+  return [marketData, toggleMarketData]
+}
+
+export function useMarketReserves(): [boolean, () => void] {
+  const dispatch = useAppDispatch()
+  const marketReserves = useAppSelector((state) => Boolean(state.user.marketReserves))
+
+  const toggleMarketReserves = useCallback(() => {
+    dispatch(updateMarketReserves({ marketReserves: !marketReserves }))
+  }, [marketReserves, dispatch])
+
+  return [marketReserves, toggleMarketReserves]
+}
+
 export function useExpertModeManager(): [boolean, () => void] {
   const dispatch = useAppDispatch()
   const expertMode = useIsExpertMode()
@@ -153,6 +191,70 @@ export function useUserSlippageTolerance(): Percent | 'auto' {
     () => (userSlippageTolerance === 'auto' ? 'auto' : new Percent(userSlippageTolerance, 10_000)),
     [userSlippageTolerance]
   )
+}
+
+export function useSetUserTradeDuration(): (tradeDuration: number | 'auto') => void {
+  const dispatch = useAppDispatch()
+
+  return useCallback(
+    (userTradeDuration: number | 'auto') => {
+      let value: 'auto' | number
+      try {
+        value = userTradeDuration === 'auto' ? 'auto' : userTradeDuration
+      } catch (error) {
+        value = 'auto'
+      }
+      dispatch(
+        updateUserTradeDuration({
+          userTradeDuration: value,
+        })
+      )
+    },
+    [dispatch]
+  )
+}
+
+/**
+ * Return the user's slippage tolerance, from the redux store, and a function to update the slippage tolerance
+ */
+export function useUserTradeDuration(): number | 'auto' {
+  const userTradeDuration = useAppSelector((state) => {
+    return state.user.userTradeDuration
+  })
+
+  return useMemo(() => (userTradeDuration === 'auto' ? 'auto' : userTradeDuration), [userTradeDuration])
+}
+
+export function useSetBlockDelay(): (blockDelay: number | '0') => void {
+  const dispatch = useAppDispatch()
+
+  return useCallback(
+    (blockDelay: number | '0') => {
+      let value: '0' | number
+      try {
+        value = blockDelay === '0' ? '0' : blockDelay
+      } catch (error) {
+        value = '0'
+      }
+      dispatch(
+        updateBlockDelay({
+          blockDelay: value,
+        })
+      )
+    },
+    [dispatch]
+  )
+}
+
+/**
+ * Return the user's slippage tolerance, from the redux store, and a function to update the slippage tolerance
+ */
+export function useBlockDelay(): number | '0' {
+  const blockDelay = useAppSelector((state) => {
+    return state.user.blockDelay
+  })
+
+  return useMemo(() => (blockDelay === '0' ? '0' : blockDelay), [blockDelay])
 }
 
 export function useUserHideClosedPositions(): [boolean, (newHideClosedPositions: boolean) => void] {

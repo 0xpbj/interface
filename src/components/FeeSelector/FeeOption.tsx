@@ -8,7 +8,6 @@ import React from 'react'
 import styled from 'styled-components/macro'
 import { ThemedText } from 'theme'
 
-import { FeeTierPercentageBadge } from './FeeTierPercentageBadge'
 import { FEE_AMOUNT_DETAIL } from './shared'
 
 const ResponsiveText = styled(ThemedText.Label)`
@@ -29,10 +28,9 @@ interface FeeOptionProps {
   onClick: () => void
 }
 
-export function FeeOption({ feeAmount, active, poolState, distributions, onClick }: FeeOptionProps) 
-{
+export function FeeOption({ feeAmount, active, poolState, distributions, onClick }: FeeOptionProps) {
   let label = FEE_AMOUNT_DETAIL[feeAmount].label
-  label += (label !== 'Automatic') ? ' blocks' : ''
+  label += label !== 'Automatic' ? ' blocks' : ''
 
   return (
     <ButtonRadioChecked active={active} onClick={onClick}>

@@ -21,13 +21,11 @@ const delayMs = async (delayInMs = 250) => {
     }, delayInMs)
   })
 }
-const runClientCommand = async (clientSocket: Socket | undefined, 
-                                cmdObj: any,
-                                timeOutMs = 10000) => {
+const runClientCommand = async (clientSocket: Socket | undefined, cmdObj: any, timeOutMs = 10000) => {
   if (!clientSocket) {
-    log.error('No connection to server. Socket undefined. ' + 
-              'Unable to run command:\n' + 
-              JSON.stringify(cmdObj, null, 2))
+    log.error(
+      'No connection to server. Socket undefined. ' + 'Unable to run command:\n' + JSON.stringify(cmdObj, null, 2)
+    )
     return
   }
 
@@ -47,9 +45,11 @@ const runClientCommand = async (clientSocket: Socket | undefined,
 
     const exitFn = (reason: string) => {
       timeOut.ignore = true
-      reject(`runCommand failed eth node server connection, while running:\n` +
-             JSON.stringify(cmdObj, null, 2) +
-             `\nbecause: ${reason}.\n`)
+      reject(
+        `runCommand failed eth node server connection, while running:\n` +
+          JSON.stringify(cmdObj, null, 2) +
+          `\nbecause: ${reason}.\n`
+      )
     }
     clientSocket.once('disconnect', exitFn)
 
@@ -61,9 +61,11 @@ const runClientCommand = async (clientSocket: Socket | undefined,
         log.debug(`Command ${cmdObj.command} succeeded.`)
         resolve(null)
       } else {
-        reject(`Failed to get expected acknowledgement of command ${cmdObj.command}. ` +
-               `Expected command id ${cmdObj.id}, received response: ` +
-               `${JSON.stringify(obj, null, 2)}`)
+        reject(
+          `Failed to get expected acknowledgement of command ${cmdObj.command}. ` +
+            `Expected command id ${cmdObj.id}, received response: ` +
+            `${JSON.stringify(obj, null, 2)}`
+        )
       }
     })
 
@@ -73,8 +75,10 @@ const runClientCommand = async (clientSocket: Socket | undefined,
       if (!timeOut.ignore) {
         clientSocket.removeAllListeners('result')
         clientSocket.removeListener('disconnect', exitFn)
-        reject(`runClientCommand timed out after ${timeOutMs / 1000} seconds, while running:\n` +
-               JSON.stringify(cmdObj, null, 2))
+        reject(
+          `runClientCommand timed out after ${timeOutMs / 1000} seconds, while running:\n` +
+            JSON.stringify(cmdObj, null, 2)
+        )
       }
     }, timeOutMs)
   })
@@ -85,6 +89,8 @@ type CommandType = {
   command: string
   args?: any
 }
+
+let transactionsData = []
 
 export const testAsClient = async () => {
   log.debug('****************************Testing client mode ...')
@@ -148,6 +154,7 @@ export const testAsClient = async () => {
 
   clientSocket.on('status', (statusObj) => {
     log.debug(`Received status:\n${JSON.stringify(statusObj, null, 2)}`)
+    transactionsData.push(statusObj)
   })
 
   clientSocket.on('disconnect', (reason) => {
@@ -159,14 +166,10 @@ export const testAsClient = async () => {
   })
 }
 
-
-
-
 let _cmdId = 0
 let _clientSocket: Socket | undefined = undefined
 
-export const initSimulator = async ():Promise<void> => 
-{
+export const initSimulator = async (): Promise<void> => {
   if (!_clientSocket) {
     _clientSocket = io(_serverUrl())
 
@@ -188,11 +191,15 @@ export const initSimulator = async ():Promise<void> =>
   }
 }
 
-export const play = async(tokenA: number, 
-                          tokenB: number,
-                          numIntervals: number,
-                          blockInterval: number): Promise<void> => {
-
+export const play = async (
+  tokenA: number,
+  tokenB: number,
+  numIntervals: number,
+  blockInterval: number,
+  simulateArbitrage: boolean,
+  marketReserves: boolean,
+  marketData: boolean
+  ): Promise<void> => {
   log.debug('Running simulation:')
 
   const cmdObj = {
@@ -204,9 +211,9 @@ export const play = async(tokenA: number,
       numIntervals,
       blockInterval,
       /* more options possible (and in place, get this working first) */
-      arbitrage: true,
-      useMarketInitial: true,   // Use real reserves to start
-      useMarketData: true,
+      simulateArbitrage,
+      marketReserves, // Use real reserves to start
+      marketData,
     },
   }
   await runClientCommand(_clientSocket, cmdObj)
@@ -221,6 +228,7 @@ export const pause = async (): Promise<void> => {
 
 export const reset = async(): Promise<void> => {
   log.debug('Resetting simulation:')
+  transactionsData = []
   const cmdObj = { id: _cmdId++, command: 'simulation-reset', args: {} }
   await runClientCommand(_clientSocket, cmdObj)
 }

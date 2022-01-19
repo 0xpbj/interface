@@ -18,6 +18,11 @@ import {
   updateUserExpertMode,
   updateUserLocale,
   updateUserSlippageTolerance,
+  updateUserTradeDuration,
+  updateBlockDelay,
+  updateSimulateArbitrage,
+  updateMarketData,
+  updateMarketReserves
 } from './actions'
 
 const currentTimestamp = () => new Date().getTime()
@@ -32,6 +37,9 @@ export interface UserState {
   userLocale: SupportedLocale | null
 
   userExpertMode: boolean
+  simulateArbitrage: boolean
+  marketData: boolean
+  marketReserves: boolean
 
   userClientSideRouter: boolean // whether routes should be calculated with the client side router only
 
@@ -40,6 +48,8 @@ export interface UserState {
 
   // user defined slippage tolerance in bips, used in all txns
   userSlippageTolerance: number | 'auto'
+  userTradeDuration: number | 'auto'
+  blockDelay: number | '0'
   userSlippageToleranceHasBeenMigratedToAuto: boolean // temporary flag for migration status
 
   // deadline set by user in minutes, used in all txns
@@ -70,10 +80,15 @@ export const initialState: UserState = {
   matchesDarkMode: false,
   userDarkMode: null,
   userExpertMode: false,
+  simulateArbitrage: true,
+  marketData: true,
+  marketReserves: true,
   userLocale: null,
   userClientSideRouter: false,
   userHideClosedPositions: false,
   userSlippageTolerance: 'auto',
+  userTradeDuration: 'auto',
+  blockDelay: '0',
   userSlippageToleranceHasBeenMigratedToAuto: true,
   userDeadline: DEFAULT_DEADLINE_FROM_NOW,
   tokens: {},
@@ -129,12 +144,32 @@ export default createReducer(initialState, (builder) =>
       state.userExpertMode = action.payload.userExpertMode
       state.timestamp = currentTimestamp()
     })
+    .addCase(updateSimulateArbitrage, (state, action) => {
+      state.simulateArbitrage = action.payload.simulateArbitrage
+      state.timestamp = currentTimestamp()
+    })
+    .addCase(updateMarketData, (state, action) => {
+      state.marketData = action.payload.marketData
+      state.timestamp = currentTimestamp()
+    })
+    .addCase(updateMarketReserves, (state, action) => {
+      state.marketReserves = action.payload.marketReserves
+      state.timestamp = currentTimestamp()
+    })
     .addCase(updateUserLocale, (state, action) => {
       state.userLocale = action.payload.userLocale
       state.timestamp = currentTimestamp()
     })
     .addCase(updateUserSlippageTolerance, (state, action) => {
       state.userSlippageTolerance = action.payload.userSlippageTolerance
+      state.timestamp = currentTimestamp()
+    })
+    .addCase(updateUserTradeDuration, (state, action) => {
+      state.userTradeDuration = action.payload.userTradeDuration
+      state.timestamp = currentTimestamp()
+    })
+    .addCase(updateBlockDelay, (state, action) => {
+      state.blockDelay = action.payload.blockDelay
       state.timestamp = currentTimestamp()
     })
     .addCase(updateUserDeadline, (state, action) => {

@@ -6,6 +6,14 @@ import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { useV3DerivedMintInfo, useV3MintActionHandlers, useV3MintState } from 'state/mint/v3/hooks'
+import {
+  useBlockDelay,
+  useMarketData,
+  useMarketReserves,
+  useSimulateArbitrage,
+  useUserSlippageTolerance,
+  useUserTradeDuration,
+} from 'state/user/hooks'
 import { TYPE } from 'theme'
 import { unixToDate } from 'utils/date'
 
@@ -33,8 +41,6 @@ import { ThemedText } from '../../theme'
 import { currencyId } from '../../utils/currencyId'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
 import { CurrencyDropdown, DynamicSection, MediumOnly, PageWrapper, ScrollablePage, Wrapper } from './styled'
-import { useSetUserSlippageTolerance, useUserSlippageTolerance, useUserTransactionTTL } from 'state/user/hooks'
-
 
 const DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE = new Percent(50, 10_000)
 
@@ -105,52 +111,67 @@ export default function AddLiquidity({
   initSimulator()
 
   const userSlippageTolerance = useUserSlippageTolerance()
+  const userTradeDuration = useUserTradeDuration()
+  const blockDelay = useBlockDelay()
+
+  const [simulateArbitrage, toggleSimulateArbitrage] = useSimulateArbitrage()
+  const [marketData, toggleMarketData] = useMarketData()
+  const [marketReserves, toggleMarketReserves] = useMarketReserves()
+
+  const [valueLabel, setValueLabel] = useState<string | undefined>()
+  const [latestValue, setLatestValue] = useState<number | undefined>()
+  // const CHECK_IF_SWAP_IS_ACTIVE = true
+  const [isSwapActive, setSwapActive] = useState<boolean | undefined>()
 
   const handlePlay = async () => {
     // let numIntervals = 0
     // const blockInterval = 10
+    setSwapActive(true)
     const amt = parseFloat(formattedAmounts[Field.CURRENCY_A])
     // No idea what's above here ...
 
-
     const blockInterval = 10
-    let numberOfBlocks = 0
+    // let numberOfBlocks = 0
     let numberOfIntervals = 0
-    
+    console.log('block delay', blockDelay)
+
     // Attrocious workaround ...
-    try {
-      // This could go wrong if they don't maintain a constant number of separators
-      // in the path.  This is a really bad way to do this.
-      const pathElements = history.location.pathname.split('/')
-      const feeOptionIndex = 4
-      const feeOption = pathElements[feeOptionIndex]
+    // try {
+    //   // This could go wrong if they don't maintain a constant number of separators
+    //   // in the path.  This is a really bad way to do this.
+    //   const pathElements = history.location.pathname.split('/')
+    //   const feeOptionIndex = 4
+    //   const feeOption = pathElements[feeOptionIndex]
 
-      // Map the feeOption to our values
-      switch (feeOption) {
-        case '100':
-          numberOfBlocks = 100
-          break;
-        case '500':
-          numberOfBlocks = 1000
-          break;
-        case '3000':
-          numberOfBlocks = 10000
-          break;
-        default:  // '10000' etc.
-          break;
-    }
-    } catch (ignoreErr) {}
+    //   // Map the feeOption to our values
+    //   switch (feeOption) {
+    //     case '100':
+    //       numberOfBlocks = 100
+    //       break
+    //     case '500':
+    //       numberOfBlocks = 1000
+    //       break
+    //     case '3000':
+    //       numberOfBlocks = 10000
+    //       break
+    //     default:
+    //       // '10000' etc.
+    //       break
+    //   }
+    // } catch (ignoreErr) {}
 
-    if (numberOfBlocks) {
-      numberOfIntervals = numberOfBlocks / blockInterval
-    } else /* auto */ {
+    if (userTradeDuration !== 'auto') {
+      numberOfIntervals = Math.floor(userTradeDuration / blockInterval)
+    } /* auto */ else {
       //  Auto - algo:
       //  AmountPerBlock = amt / (blockInterval * numberOfIntervals) >> 1
       //  AmountPerBlock = amt / (blockInterval * numberOfIntervals) > 10
       //  amt / (blockInterval * 10) > numberOfIntervals
       const maxNumberOfIntervals = Math.floor(amt / (blockInterval * 10))
       if (isNaN(maxNumberOfIntervals)) {
-        throw new Error(`Specify an amount to automatically compute the length of a long term trade (${amt} tokens specified).`)
+        throw new Error(
+          `Specify an amount to automatically compute the length of a long term trade (${amt} tokens specified).`
+        )
       }
       if (maxNumberOfIntervals < 5) {
         throw new Error(`Insufficient amount to justify long term trade (${amt} tokens). Add more tokens ...`)
@@ -158,8 +179,14 @@ export default function AddLiquidity({
       numberOfIntervals = maxNumberOfIntervals - 1
       console.log(`DEBUG - Auto mode - set numberOfIntervals=${numberOfIntervals}`)
     }
-    console.log(`handlePlay:\n  numIntervals=${numberOfIntervals}\n  blockInterval=${blockInterval}\n  mode=${userSlippageTolerance}\n  history=${JSON.stringify(history, null, 2)}\n`)
-    await play(amt, 0, numberOfIntervals, blockInterval)
+    console.log(
+      `handlePlay:\n  numIntervals=${numberOfIntervals}\n  blockInterval=${blockInterval}\n  mode=${userSlippageTolerance}\n  history=${JSON.stringify(
+        history,
+        null,
+        2
+      )}\n`
+    )
+    await play(amt, 0, numberOfIntervals, blockInterval, simulateArbitrage, marketData, marketReserves)
 
     // More stuff to recycle ...
     // if (userSlippageTolerance !== 'auto') {
@@ -176,6 +203,7 @@ export default function AddLiquidity({
 
   const handleReset = async () => {
     await reset()
+    setSwapActive(false)
   }
 
   // useTestAsClient()
@@ -269,9 +297,6 @@ export default function AddLiquidity({
   )
 
   const addIsUnsupported = useIsSwapUnsupported(currencies?.CURRENCY_A, currencies?.CURRENCY_B)
-
-  const [valueLabel, setValueLabel] = useState<string | undefined>()
-  const [latestValue, setLatestValue] = useState<number | undefined>()
 
   const formattedTvlData = useMemo(() => {
     if (sampleChartData) {
@@ -489,35 +514,42 @@ export default function AddLiquidity({
           </Wrapper>
         </PageWrapper>
 
-        <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
-          Swap Graph
-        </TYPE.main>
-        <PageWrapper wide={!hasExistingPosition}>
-          <Wrapper>
-            <LineChart
-              data={formattedTvlData}
-              setLabel={setValueLabel}
-              color={'#2172E5'}
-              minHeight={340}
-              setValue={setLatestValue}
-            />
-            {/*value={formattedTvlData ? formatDollarAmount(formattedTvlData[formattedTvlData.length - 1]?.value) : 0}
-            label={valueLabel}*/}
-          </Wrapper>
-        </PageWrapper>
-
-        <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
-          Transactions
-        </TYPE.main>
-        <PageWrapper wide={!hasExistingPosition}>
-            <TransactionTable transactions={sampleTransactions} />
-            {addIsUnsupported && (
-              <UnsupportedCurrencyFooter
-                show={addIsUnsupported}
-                currencies={[currencies.CURRENCY_A, currencies.CURRENCY_B]}
-              />
-            )}
-        </PageWrapper>
+        {isSwapActive && (
+          <>
+            <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
+              Swap Graph
+            </TYPE.main>
+            <PageWrapper wide={!hasExistingPosition}>
+              <Wrapper>
+                <LineChart
+                  data={formattedTvlData}
+                  setLabel={setValueLabel}
+                  color={'#2172E5'}
+                  minHeight={340}
+                  setValue={setLatestValue}
+                />
+                {/*value={formattedTvlData ? formatDollarAmount(formattedTvlData[formattedTvlData.length - 1]?.value) : 0}
+              label={valueLabel}*/}
+              </Wrapper>
+            </PageWrapper>
+          </>
+        )}
+        {isSwapActive && (
+          <>
+            <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
+              Transactions
+            </TYPE.main>
+            <PageWrapper wide={!hasExistingPosition}>
+              <TransactionTable transactions={sampleTransactions} />
+              {addIsUnsupported && (
+                <UnsupportedCurrencyFooter
+                  show={addIsUnsupported}
+                  currencies={[currencies.CURRENCY_A, currencies.CURRENCY_B]}
+                />
+              )}
+            </PageWrapper>
+          </>
+        )}
       </ScrollablePage>
       <SwitchLocaleLink />
     </>

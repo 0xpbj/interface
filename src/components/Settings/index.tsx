@@ -1,22 +1,21 @@
 // eslint-disable-next-line no-restricted-imports
 import { t, Trans } from '@lingui/macro'
 import { Percent } from '@uniswap/sdk-core'
-import { useActiveWeb3React } from 'hooks/web3'
 import { useContext, useRef, useState } from 'react'
 import { Settings, X } from 'react-feather'
-import ReactGA from 'react-ga'
 import { Text } from 'rebass'
-import { AUTO_ROUTER_SUPPORTED_CHAINS } from 'state/routing/clientSideSmartOrderRouter/constants'
 import styled, { ThemeContext } from 'styled-components/macro'
 
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { useModalOpen, useToggleSettingsMenu } from '../../state/application/hooks'
 import { ApplicationModal } from '../../state/application/reducer'
-import { useClientSideRouter, useExpertModeManager } from '../../state/user/hooks'
+import {
+  useMarketData,
+  useMarketReserves,
+  useSimulateArbitrage,
+} from '../../state/user/hooks'
 import { ThemedText } from '../../theme'
-import { ButtonError } from '../Button'
 import { AutoColumn } from '../Column'
-import Modal from '../Modal'
 import QuestionHelper from '../QuestionHelper'
 import { RowBetween, RowFixed } from '../Row'
 import Toggle from '../Toggle'
@@ -97,51 +96,23 @@ const MenuFlyout = styled.span`
   user-select: none;
 `
 
-const Break = styled.div`
-  width: 100%;
-  height: 1px;
-  background-color: ${({ theme }) => theme.bg3};
-`
-
-const ModalContentWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 0;
-  background-color: ${({ theme }) => theme.bg2};
-  border-radius: 20px;
-`
-
 export default function SettingsTab({ placeholderSlippage }: { placeholderSlippage: Percent }) {
-  const { chainId } = useActiveWeb3React()
-
   const node = useRef<HTMLDivElement>()
   const open = useModalOpen(ApplicationModal.SETTINGS)
   const toggle = useToggleSettingsMenu()
 
   const theme = useContext(ThemeContext)
 
-  const [expertMode, toggleExpertMode] = useExpertModeManager()
-
-  const [clientSideRouter, setClientSideRouter] = useClientSideRouter()
-
-  // show confirmation view before turning on
-  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [simulateArbitrage, toggleSimulateArbitrage] = useSimulateArbitrage()
+  const [marketData, toggleMarketData] = useMarketData()
+  const [marketReserves, toggleMarketReserves] = useMarketReserves()
 
   useOnClickOutside(node, open ? toggle : undefined)
 
   return (
-    // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30451
     <StyledMenu ref={node as any}>
       <StyledMenuButton onClick={toggle} id="open-settings-dialog-button" aria-label={t`Transaction Settings`}>
         <StyledMenuIcon />
-        {expertMode ? (
-          <EmojiWrapper>
-            <span role="img" aria-label="wizard-icon">
-              🧙
-            </span>
-          </EmojiWrapper>
-        ) : null}
       </StyledMenuButton>
       {open && (
         <MenuFlyout>
@@ -153,48 +124,49 @@ export default function SettingsTab({ placeholderSlippage }: { placeholderSlippa
             <Text fontWeight={600} fontSize={14}>
               <Trans>Arbitrage Settings</Trans>
             </Text>
-            {chainId && AUTO_ROUTER_SUPPORTED_CHAINS.includes(chainId) && (
-              <RowBetween>
-                <RowFixed>
-                  <ThemedText.Black fontWeight={400} fontSize={14} color={theme.text2}>
-                    <Trans>Simulate Arbitrage</Trans>
-                  </ThemedText.Black>
-                  <QuestionHelper text={<Trans>Use the Uniswap Labs API to get faster quotes.</Trans>} />
-                </RowFixed>
-                <Toggle
-                  id="toggle-optimized-router-button"
-                  isActive={!clientSideRouter}
-                  toggle={() => {
-                    setClientSideRouter(!clientSideRouter)
-                  }}
-                />
-              </RowBetween>
-            )}
             <RowBetween>
               <RowFixed>
                 <ThemedText.Black fontWeight={400} fontSize={14} color={theme.text2}>
-                  <Trans>Historical Trade Data</Trans>
+                  <Trans>Simulate Arbitrage</Trans>
                 </ThemedText.Black>
-                <QuestionHelper
-                  text={
-                    <Trans>Allow high price impact trades and skip the confirm screen. Use at your own risk.</Trans>
-                  }
-                />
+                <QuestionHelper text={<Trans>Enable automatic arbitrage of trades.</Trans>} />
+              </RowFixed>
+              <Toggle
+                id="toggle-optimized-router-button"
+                isActive={simulateArbitrage}
+                toggle={() => {
+                  toggleSimulateArbitrage()
+                }}
+              />
+            </RowBetween>
+            <RowBetween>
+              <RowFixed>
+                <ThemedText.Black fontWeight={400} fontSize={14} color={theme.text2}>
+                  <Trans>Market Data</Trans>
+                </ThemedText.Black>
+                <QuestionHelper text={<Trans>Use real market data</Trans>} />
               </RowFixed>
               <Toggle
                 id="toggle-expert-mode-button"
-                isActive={expertMode}
-                toggle={
-                  expertMode
-                    ? () => {
-                        toggleExpertMode()
-                        setShowConfirmation(false)
-                      }
-                    : () => {
-                        toggleExpertMode()
-                        // setShowConfirmation(true)
-                      }
-                }
+                isActive={marketData}
+                toggle={() => {
+                  toggleMarketData()
+                }}
+              />
+            </RowBetween>
+            <RowBetween>
+              <RowFixed>
+                <ThemedText.Black fontWeight={400} fontSize={14} color={theme.text2}>
+                  <Trans>Market Initial Reserves</Trans>
+                </ThemedText.Black>
+                <QuestionHelper text={<Trans>Use real reserves to seed the TWAMM pools</Trans>} />
+              </RowFixed>
+              <Toggle
+                id="toggle-expert-mode-button"
+                isActive={marketReserves}
+                toggle={() => {
+                  toggleMarketReserves()
+                }}
               />
             </RowBetween>
           </AutoColumn>

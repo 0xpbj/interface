@@ -118,10 +118,7 @@ const DataRow = ({ transaction, color }: { transaction: Transaction; color?: str
         <HoverInlineText text={`${formatAmount(abs1)}  ${transaction.token1Symbol}`} maxCharacters={16} />
       </Label>
       <Label end={1} fontWeight={400}>
-        <ExternalLink
-          href={getEtherscanLink(1, transaction.sender, 'address')}
-          style={{ color: color ?? theme.blue1 }}
-        >
+        <ExternalLink href={getEtherscanLink(1, transaction.sender, 'address')} style={{ color: color ?? theme.blue1 }}>
           {shortenAddress(transaction.sender)}
         </ExternalLink>
       </Label>

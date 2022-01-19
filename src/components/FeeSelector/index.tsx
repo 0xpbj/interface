@@ -12,12 +12,10 @@ import { useActiveWeb3React } from 'hooks/web3'
 import { DynamicSection } from 'pages/AddLiquidity/styled'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactGA from 'react-ga'
-import { Box } from 'rebass'
 import styled, { keyframes } from 'styled-components/macro'
 import { ThemedText } from 'theme'
 
 import { FeeOption } from './FeeOption'
-import { FeeTierPercentageBadge } from './FeeTierPercentageBadge'
 import { FEE_AMOUNT_DETAIL } from './shared'
 
 const pulse = (color: string) => keyframes`
