@@ -2,8 +2,10 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { Trans } from '@lingui/macro'
 import { Currency, CurrencyAmount, Percent } from '@uniswap/sdk-core'
 import { FeeAmount } from '@uniswap/v3-sdk'
+import { ColumnCenter } from 'components/Column'
 import UnsupportedCurrencyFooter from 'components/swap/UnsupportedCurrencyFooter'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import useTheme from 'hooks/useTheme'
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { useV3DerivedMintInfo, useV3MintActionHandlers, useV3MintState } from 'state/mint/v3/hooks'
 import {
@@ -21,6 +23,7 @@ import { ButtonLight, ButtonText } from '../../components/Button'
 import CurrencyInputPanel from '../../components/CurrencyInputPanel'
 import FeeSelector from '../../components/FeeSelector'
 import LineChart from '../../components/LineChart'
+import Loader from '../../components/Loader'
 import { AddRemoveTabs } from '../../components/NavigationTabs'
 import RateToggle from '../../components/RateToggle'
 import Row, { RowBetween } from '../../components/Row'
@@ -32,7 +35,7 @@ import { WRAPPED_NATIVE_CURRENCY } from '../../constants/tokens'
 import { useCurrency } from '../../hooks/Tokens'
 import { useDerivedPositionInfo } from '../../hooks/useDerivedPositionInfo'
 import { useIsSwapUnsupported } from '../../hooks/useIsSwapUnsupported'
-import { initSimulator, pause, play, reset, testAsClient } from '../../hooks/useSocketClient'
+import { initSimulator, pause, play, reset, testAsClient, getInfo } from '../../hooks/useSocketClient'
 import { useUSDCValue } from '../../hooks/useUSDCPrice'
 import { useV3PositionFromTokenId } from '../../hooks/useV3Positions'
 import { useActiveWeb3React } from '../../hooks/web3'
@@ -43,6 +46,19 @@ import { maxAmountSpend } from '../../utils/maxAmountSpend'
 import { CurrencyDropdown, DynamicSection, MediumOnly, PageWrapper, ScrollablePage, Wrapper } from './styled'
 
 const DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE = new Percent(50, 10_000)
+
+function InfoBox({ message, icon }: { message?: ReactNode; icon: ReactNode }) {
+  return (
+    <ColumnCenter style={{ height: '100%', justifyContent: 'center' }}>
+      {icon}
+      {message && (
+        <ThemedText.MediumHeader padding={10} marginTop="20px" textAlign="center">
+          {message}
+        </ThemedText.MediumHeader>
+      )}
+    </ColumnCenter>
+  )
+}
 
 export default function AddLiquidity({
   match: {
@@ -114,9 +130,9 @@ export default function AddLiquidity({
   const userTradeDuration = useUserTradeDuration()
   const blockDelay = useBlockDelay()
 
-  const [simulateArbitrage, toggleSimulateArbitrage] = useSimulateArbitrage()
-  const [marketData, toggleMarketData] = useMarketData()
-  const [marketReserves, toggleMarketReserves] = useMarketReserves()
+  const [simulateArbitrage] = useSimulateArbitrage()
+  const [marketData] = useMarketData()
+  const [marketReserves] = useMarketReserves()
 
   const [valueLabel, setValueLabel] = useState<string | undefined>()
   const [latestValue, setLatestValue] = useState<number | undefined>()
@@ -133,7 +149,6 @@ export default function AddLiquidity({
     const blockInterval = 10
     // let numberOfBlocks = 0
     let numberOfIntervals = 0
-    console.log('block delay', blockDelay)
 
     // Attrocious workaround ...
     // try {
@@ -186,8 +201,16 @@ export default function AddLiquidity({
         2
       )}\n`
     )
-    await play(amt, 0, numberOfIntervals, blockInterval, simulateArbitrage, marketData, marketReserves)
-
+    await play(
+      amt,
+      0,
+      numberOfIntervals,
+      blockInterval,
+      Number(blockDelay),
+      simulateArbitrage,
+      marketData,
+      marketReserves
+    )
     // More stuff to recycle ...
     // if (userSlippageTolerance !== 'auto') {
     //   numIntervals = Number(userSlippageTolerance.toFixed(0)) / blockInterval
@@ -350,6 +373,8 @@ export default function AddLiquidity({
 
   const acForceEnableSwapAmount = true
   const acShowSetPriceRange = false
+  const theme = useTheme()
+  const info = getInfo()
   return (
     <>
       <ScrollablePage>
@@ -393,6 +418,12 @@ export default function AddLiquidity({
           <Wrapper>
             {/* <ResponsiveTwoColumns wide={!hasExistingPosition}> */}
             {/* <AutoColumn gap="lg"> */}
+            {info?.flag && (
+              <InfoBox
+                message={<Trans>{`Long term swap processing block: ${info.id}`}</Trans>}
+                icon={<Loader size="40px" stroke={theme.text4} />}
+              />
+            )}
             {!hasExistingPosition && (
               <>
                 <div>

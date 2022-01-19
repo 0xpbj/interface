@@ -168,6 +168,12 @@ export const testAsClient = async () => {
 
 let _cmdId = 0
 let _clientSocket: Socket | undefined = undefined
+type InfoType = {
+  id: number
+  command: string
+  flag: boolean
+}
+let infoObj: InfoType | undefined = undefined
 
 export const initSimulator = async (): Promise<void> => {
   if (!_clientSocket) {
@@ -179,6 +185,30 @@ export const initSimulator = async (): Promise<void> => {
 
     _clientSocket.on('status', (statusObj) => {
       log.debug(`Received status:\n${JSON.stringify(statusObj, null, 2)}`)
+      const { data, message } = statusObj
+      let blockNumber = -1
+      if (data) {
+        blockNumber = data.blockNumber
+      }
+      if (message === 'Running simulation ...') {
+        infoObj = {
+          id: blockNumber,
+          command: message,
+          flag: true,
+        }
+      } else if (message === 'Simulation completed.') {
+        infoObj = {
+          id: blockNumber,
+          command: message,
+          flag: false,
+        }
+      } else if (message === 'Resetting simulation completed.') {
+        infoObj = {
+          id: -1,
+          command: message,
+          flag: false,
+        }
+      }
     })
 
     _clientSocket.on('disconnect', (reason) => {
@@ -191,15 +221,23 @@ export const initSimulator = async (): Promise<void> => {
   }
 }
 
+export const getInfo = (): InfoType | undefined => {
+  if (infoObj) {
+    return infoObj
+  }
+  return undefined
+}
+
 export const play = async (
   tokenA: number,
   tokenB: number,
   numIntervals: number,
   blockInterval: number,
+  blockDelay: number,
   simulateArbitrage: boolean,
   marketReserves: boolean,
   marketData: boolean
-  ): Promise<void> => {
+): Promise<void> => {
   log.debug('Running simulation:')
 
   const cmdObj = {
@@ -210,14 +248,14 @@ export const play = async (
       tokenB,
       numIntervals,
       blockInterval,
+      blockDelay,
       /* more options possible (and in place, get this working first) */
-      simulateArbitrage,
-      marketReserves, // Use real reserves to start
-      marketData,
+      arbitrage: simulateArbitrage,
+      useMarketInitial: marketReserves, // Use real reserves to start
+      useMarketData: marketData,
     },
   }
   await runClientCommand(_clientSocket, cmdObj)
-
 }
 
 export const pause = async (): Promise<void> => {
