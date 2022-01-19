@@ -1,4 +1,4 @@
-import { DarkGreyCard } from 'components/Card'
+import Card from 'components/Card'
 import { AutoColumn } from 'components/Column'
 import HoverInlineText from 'components/HoverInlineText'
 import Loader from 'components/Loader'
@@ -16,7 +16,8 @@ import { formatAmount, formatDollarAmount } from 'utils/numbers'
 // import { useActiveNetworkVersion } from 'state/application/hooks'
 // import { OptimismNetworkInfo } from 'constants/networks'
 
-const Wrapper = styled(DarkGreyCard)`
+// AC: was DarkGreyCard
+const Wrapper = styled(Card)`
   width: 100%;
 `
 
@@ -220,7 +221,7 @@ export default function TransactionTable({
               }}
               active={txFilter === TransactionType.SWAP}
             >
-              Swaps
+              Operation
             </SortText>
             {/* <SortText
               onClick={() => {

@@ -21,7 +21,16 @@ const delayMs = async (delayInMs = 250) => {
     }, delayInMs)
   })
 }
-const runClientCommand = async (clientSocket: any, cmdObj: any) => {
+const runClientCommand = async (clientSocket: Socket | undefined, 
+                                cmdObj: any,
+                                timeOutMs = 10000) => {
+  if (!clientSocket) {
+    log.error('No connection to server. Socket undefined. ' + 
+              'Unable to run command:\n' + 
+              JSON.stringify(cmdObj, null, 2))
+    return
+  }
+
   if (cmdObj.executed) {
     log.error(
       `Command executed already! A new command and id must be created. Ignoring!\n` +
@@ -33,20 +42,41 @@ const runClientCommand = async (clientSocket: any, cmdObj: any) => {
   clientSocket.emit('client-command', cmdObj)
   cmdObj.executed = true
 
-  await new Promise((resolve) => {
+  await new Promise((resolve, reject) => {
+    const timeOut = { ignore: false }
+
+    const exitFn = (reason: string) => {
+      timeOut.ignore = true
+      reject(`runCommand failed eth node server connection, while running:\n` +
+             JSON.stringify(cmdObj, null, 2) +
+             `\nbecause: ${reason}.\n`)
+    }
+    clientSocket.once('disconnect', exitFn)
+
     clientSocket.once('result', (obj: any) => {
+      timeOut.ignore = true
+      clientSocket.removeListener('disconnect', exitFn)
+
       if (obj && obj.result && obj.result.id === cmdObj.id) {
         log.debug(`Command ${cmdObj.command} succeeded.`)
         resolve(null)
       } else {
-        const errStr =
-          `Failed to get expected acknowledgement of command ${cmdObj.command}. ` +
-          `Expected command id ${cmdObj.id}, received response: ` +
-          `${JSON.stringify(obj, null, 2)}`
-
-        throw new Error(errStr)
+        reject(`Failed to get expected acknowledgement of command ${cmdObj.command}. ` +
+               `Expected command id ${cmdObj.id}, received response: ` +
+               `${JSON.stringify(obj, null, 2)}`)
       }
     })
+
+    // Time-out logic.  Issue a warning, clear the listener and resolve this promise:
+    //
+    setTimeout(() => {
+      if (!timeOut.ignore) {
+        clientSocket.removeAllListeners('result')
+        clientSocket.removeListener('disconnect', exitFn)
+        reject(`runClientCommand timed out after ${timeOutMs / 1000} seconds, while running:\n` +
+               JSON.stringify(cmdObj, null, 2))
+      }
+    }, timeOutMs)
   })
 }
 
@@ -174,7 +204,8 @@ export const play = async(tokenA: number,
       numIntervals,
       blockInterval,
       /* more options possible (and in place, get this working first) */
-      arbitrage: false,
+      arbitrage: true,
+      useMarketInitial: true,   // Use real reserves to start
       useMarketData: true,
     },
   }

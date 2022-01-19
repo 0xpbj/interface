@@ -107,15 +107,67 @@ export default function AddLiquidity({
   const userSlippageTolerance = useUserSlippageTolerance()
 
   const handlePlay = async () => {
-    let numIntervals = 0
-    const blockInterval = 10
+    // let numIntervals = 0
+    // const blockInterval = 10
     const amt = parseFloat(formattedAmounts[Field.CURRENCY_A])
-    if (userSlippageTolerance !== 'auto') {
-      numIntervals = Number(userSlippageTolerance.toFixed(0)) / blockInterval
-      await play(amt, 0, numIntervals, blockInterval)
-    } else {
-      await play(amt, 0, 10, 10)
+    // No idea what's above here ...
+
+
+    const blockInterval = 10
+    let numberOfBlocks = 0
+    let numberOfIntervals = 0
+    
+    // Attrocious workaround ...
+    try {
+      // This could go wrong if they don't maintain a constant number of separators
+      // in the path.  This is a really bad way to do this.
+      const pathElements = history.location.pathname.split('/')
+      const feeOptionIndex = 4
+      const feeOption = pathElements[feeOptionIndex]
+
+      // Map the feeOption to our values
+      switch (feeOption) {
+        case '100':
+          numberOfBlocks = 100
+          break;
+        case '500':
+          numberOfBlocks = 1000
+          break;
+        case '3000':
+          numberOfBlocks = 10000
+          break;
+        default:  // '10000' etc.
+          break;
     }
+    } catch (ignoreErr) {}
+
+    if (numberOfBlocks) {
+      numberOfIntervals = numberOfBlocks / blockInterval
+    } else /* auto */ {
+      //  Auto - algo:
+      //  AmountPerBlock = amt / (blockInterval * numberOfIntervals) >> 1
+      //  AmountPerBlock = amt / (blockInterval * numberOfIntervals) > 10
+      //  amt / (blockInterval * 10) > numberOfIntervals
+      const maxNumberOfIntervals = Math.floor(amt / (blockInterval * 10))
+      if (isNaN(maxNumberOfIntervals)) {
+        throw new Error(`Specify an amount to automatically compute the length of a long term trade (${amt} tokens specified).`)
+      }
+      if (maxNumberOfIntervals < 5) {
+        throw new Error(`Insufficient amount to justify long term trade (${amt} tokens). Add more tokens ...`)
+      }
+      numberOfIntervals = maxNumberOfIntervals - 1
+      console.log(`DEBUG - Auto mode - set numberOfIntervals=${numberOfIntervals}`)
+    }
+    console.log(`handlePlay:\n  numIntervals=${numberOfIntervals}\n  blockInterval=${blockInterval}\n  mode=${userSlippageTolerance}\n  history=${JSON.stringify(history, null, 2)}\n`)
+    await play(amt, 0, numberOfIntervals, blockInterval)
+
+    // More stuff to recycle ...
+    // if (userSlippageTolerance !== 'auto') {
+    //   numIntervals = Number(userSlippageTolerance.toFixed(0)) / blockInterval
+    //   await play(amt, 0, numIntervals, blockInterval)
+    // } else {
+    //   await play(amt, 0, 10, 10)
+    // }
   }
 
   const handlePause = async () => {
