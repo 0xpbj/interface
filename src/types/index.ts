@@ -30,10 +30,24 @@ export enum TransactionType {
   INITIAL_LIQUIDITY,
   DEPLOY,
   APPROVE,
-  ARB_SWAP
+  ARB_SWAP,
 }
 
 export type Transaction = {
+  type: TransactionType
+  hash: string
+  timestamp: string
+  sender: string
+  token0Symbol: string
+  token1Symbol: string
+  token0Address: string
+  token1Address: string
+  amountUSD: number
+  amountToken0: number
+  amountToken1: number
+}
+
+export type LTTransaction = {
   type: TransactionType
   hash: string
   timestamp: string

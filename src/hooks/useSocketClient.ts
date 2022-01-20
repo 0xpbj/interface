@@ -1,4 +1,3 @@
-import { Pause } from 'react-feather'
 import { io, Socket } from 'socket.io-client'
 
 import * as ds from '../utils/debugScopes'
@@ -167,13 +166,7 @@ export const testAsClient = async () => {
 }
 
 let _cmdId = 0
-let _clientSocket: Socket | undefined = undefined
-type InfoType = {
-  id: number
-  command: string
-  flag: boolean
-}
-let infoObj: InfoType | undefined = undefined
+export let _clientSocket: Socket | undefined = undefined
 
 export const initSimulator = async (): Promise<void> => {
   if (!_clientSocket) {
@@ -185,30 +178,6 @@ export const initSimulator = async (): Promise<void> => {
 
     _clientSocket.on('status', (statusObj) => {
       log.debug(`Received status:\n${JSON.stringify(statusObj, null, 2)}`)
-      const { data, message } = statusObj
-      let blockNumber = -1
-      if (data) {
-        blockNumber = data.blockNumber
-      }
-      if (message === 'Running simulation ...') {
-        infoObj = {
-          id: blockNumber,
-          command: message,
-          flag: true,
-        }
-      } else if (message === 'Simulation completed.') {
-        infoObj = {
-          id: blockNumber,
-          command: message,
-          flag: false,
-        }
-      } else if (message === 'Resetting simulation completed.') {
-        infoObj = {
-          id: -1,
-          command: message,
-          flag: false,
-        }
-      }
     })
 
     _clientSocket.on('disconnect', (reason) => {
@@ -219,13 +188,6 @@ export const initSimulator = async (): Promise<void> => {
       log.warn(`Server connection error.\n${error}`)
     })
   }
-}
-
-export const getInfo = (): InfoType | undefined => {
-  if (infoObj) {
-    return infoObj
-  }
-  return undefined
 }
 
 export const play = async (
@@ -248,7 +210,7 @@ export const play = async (
       tokenB,
       numIntervals,
       blockInterval,
-      blockDelay,
+      delayTimeMs: blockDelay,
       /* more options possible (and in place, get this working first) */
       arbitrage: simulateArbitrage,
       useMarketInitial: marketReserves, // Use real reserves to start
@@ -264,7 +226,7 @@ export const pause = async (): Promise<void> => {
   await runClientCommand(_clientSocket, cmdObj)
 }
 
-export const reset = async(): Promise<void> => {
+export const reset = async (): Promise<void> => {
   log.debug('Resetting simulation:')
   transactionsData = []
   const cmdObj = { id: _cmdId++, command: 'simulation-reset', args: {} }

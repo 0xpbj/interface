@@ -187,6 +187,27 @@ export const ButtonYellow = styled(BaseButton)`
   }
 `
 
+export const ButtonRed = styled(BaseButton)`
+  background-color: ${({ theme }) => theme.red3};
+  color: white;
+  &:focus {
+    box-shadow: 0 0 0 1pt ${({ theme }) => darken(0.05, theme.red3)};
+    background-color: ${({ theme }) => darken(0.05, theme.red3)};
+  }
+  &:hover {
+    background-color: ${({ theme }) => darken(0.05, theme.red3)};
+  }
+  &:active {
+    box-shadow: 0 0 0 1pt ${({ theme }) => darken(0.1, theme.red3)};
+    background-color: ${({ theme }) => darken(0.1, theme.red3)};
+  }
+  &:disabled {
+    background-color: ${({ theme }) => theme.red3};
+    opacity: 50%;
+    cursor: auto;
+  }
+`
+
 export const ButtonEmpty = styled(BaseButton)`
   background-color: transparent;
   color: ${({ theme }) => theme.primary1};

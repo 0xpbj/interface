@@ -17,11 +17,11 @@ import {
   useUserTradeDuration,
 } from 'state/user/hooks'
 import { TYPE } from 'theme'
+import { LTTransaction } from 'types'
 import { unixToDate } from 'utils/date'
 
-import { ButtonLight, ButtonText } from '../../components/Button'
+import { ButtonPrimary, ButtonRed, ButtonYellow } from '../../components/Button'
 import CurrencyInputPanel from '../../components/CurrencyInputPanel'
-import FeeSelector from '../../components/FeeSelector'
 import LineChart from '../../components/LineChart'
 import Loader from '../../components/Loader'
 import { AddRemoveTabs } from '../../components/NavigationTabs'
@@ -30,12 +30,11 @@ import Row, { RowBetween } from '../../components/Row'
 import { SwitchLocaleLink } from '../../components/SwitchLocaleLink'
 import TransactionTable from '../../components/TransactionsTable'
 import { sampleChartData } from '../../constants/sampleChartData'
-import { sampleTransactions } from '../../constants/sampleTransactions'
 import { WRAPPED_NATIVE_CURRENCY } from '../../constants/tokens'
 import { useCurrency } from '../../hooks/Tokens'
 import { useDerivedPositionInfo } from '../../hooks/useDerivedPositionInfo'
 import { useIsSwapUnsupported } from '../../hooks/useIsSwapUnsupported'
-import { initSimulator, pause, play, reset, testAsClient, getInfo } from '../../hooks/useSocketClient'
+import { _clientSocket, initSimulator, pause, play, reset, testAsClient } from '../../hooks/useSocketClient'
 import { useUSDCValue } from '../../hooks/useUSDCPrice'
 import { useV3PositionFromTokenId } from '../../hooks/useV3Positions'
 import { useActiveWeb3React } from '../../hooks/web3'
@@ -43,9 +42,16 @@ import { Bound, Field } from '../../state/mint/v3/actions'
 import { ThemedText } from '../../theme'
 import { currencyId } from '../../utils/currencyId'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
-import { CurrencyDropdown, DynamicSection, MediumOnly, PageWrapper, ScrollablePage, Wrapper } from './styled'
+import { CurrencyDropdown, DynamicSection, PageWrapper, ScrollablePage, Wrapper } from './styled'
+import { TransactionType } from 'types'
 
 const DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE = new Percent(50, 10_000)
+
+type InfoType = {
+  id: number
+  command: string
+  flag: boolean
+}
 
 function InfoBox({ message, icon }: { message?: ReactNode; icon: ReactNode }) {
   return (
@@ -139,41 +145,66 @@ export default function AddLiquidity({
   // const CHECK_IF_SWAP_IS_ACTIVE = true
   const [isSwapActive, setSwapActive] = useState<boolean | undefined>()
 
+  const [infoObj, setInfoObj] = useState<InfoType | undefined>()
+  const [txObj, setTxObj] = useState<LTTransaction[]>([])
+  const [chartObj, setChartObj] = useState<any[]>([])
+
+  useEffect(() => {
+    if (_clientSocket) {
+      _clientSocket.on('status', (statusObj) => {
+        // log.debug(`Received status:\n${JSON.stringify(statusObj, null, 2)}`)
+        const { data, message } = statusObj
+        if (data) {
+          const { blockNumber, reserveA, reserveB, transactions } = data
+          for (const tx of transactions) {
+            const { hash, from, to, uxType, gasUsed, nonce } = tx
+            if (uxType !== TransactionType.EXEC_VIRTUAL) {
+              setTxObj((oldArray) => [
+                ...oldArray,
+                {
+                  type: uxType,
+                  hash,
+                  timestamp: (blockNumber + nonce/10000).toString(),
+                  sender: from,
+                  token0Symbol: 'USDC',
+                  token1Symbol: 'ETH',
+                  token0Address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                  token1Address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+                  amountUSD: gasUsed,
+                  amountToken0: reserveA,
+                  amountToken1: reserveB,
+                },
+              ])
+            }
+          }
+          setInfoObj({
+            id: blockNumber,
+            command: 'Running simulation ...',
+            flag: true,
+          })
+          setChartObj((oldArray) => [
+            ...oldArray,
+            {
+              timestamp: blockNumber.toString(),
+              volumeUSD: reserveA,
+            },
+          ])
+        } else {
+          setInfoObj({
+            id: -1,
+            command: message,
+            flag: false,
+          })
+        }
+      })
+    }
+  }, [])
+
   const handlePlay = async () => {
-    // let numIntervals = 0
-    // const blockInterval = 10
     setSwapActive(true)
     const amt = parseFloat(formattedAmounts[Field.CURRENCY_A])
-    // No idea what's above here ...
-
     const blockInterval = 10
-    // let numberOfBlocks = 0
     let numberOfIntervals = 0
-
-    // Attrocious workaround ...
-    // try {
-    //   // This could go wrong if they don't maintain a constant number of separators
-    //   // in the path.  This is a really bad way to do this.
-    //   const pathElements = history.location.pathname.split('/')
-    //   const feeOptionIndex = 4
-    //   const feeOption = pathElements[feeOptionIndex]
-
-    //   // Map the feeOption to our values
-    //   switch (feeOption) {
-    //     case '100':
-    //       numberOfBlocks = 100
-    //       break
-    //     case '500':
-    //       numberOfBlocks = 1000
-    //       break
-    //     case '3000':
-    //       numberOfBlocks = 10000
-    //       break
-    //     default:
-    //       // '10000' etc.
-    //       break
-    //   }
-    // } catch (ignoreErr) {}
 
     if (userTradeDuration !== 'auto') {
       numberOfIntervals = Math.floor(userTradeDuration / blockInterval)
@@ -227,6 +258,9 @@ export default function AddLiquidity({
   const handleReset = async () => {
     await reset()
     setSwapActive(false)
+    setInfoObj(undefined)
+    setTxObj([])
+    setChartObj([])
   }
 
   // useTestAsClient()
@@ -349,23 +383,23 @@ export default function AddLiquidity({
   const SimulateButtons = () => {
     return (
       <div>
-        <ThemedText.Label>
+        {/* <ThemedText.Label>
           <Trans>Simulation</Trans>
-        </ThemedText.Label>
+        </ThemedText.Label> */}
         <div style={{ width: '100%', height: '10px' }} />
 
         <RowBetween>
-          <ButtonLight onClick={handlePlay} $borderRadius="12px" padding={'12px'}>
+          <ButtonPrimary onClick={handlePlay} $borderRadius="12px" padding={'12px'}>
             <Trans>Play</Trans>
-          </ButtonLight>
+          </ButtonPrimary>
           <span style={{ height: '100%', width: '35px' }} />
-          <ButtonLight onClick={handlePause} $borderRadius="12px" padding={'12px'}>
+          <ButtonYellow onClick={handlePause} $borderRadius="12px" padding={'12px'}>
             <Trans>Pause</Trans>
-          </ButtonLight>
+          </ButtonYellow>
           <span style={{ height: '100%', width: '35px' }} />
-          <ButtonLight onClick={handleReset} $borderRadius="12px" padding={'12px'}>
+          <ButtonRed onClick={handleReset} $borderRadius="12px" padding={'12px'}>
             <Trans>Reset</Trans>
-          </ButtonLight>
+          </ButtonRed>
         </RowBetween>
       </div>
     )
@@ -374,7 +408,7 @@ export default function AddLiquidity({
   const acForceEnableSwapAmount = true
   const acShowSetPriceRange = false
   const theme = useTheme()
-  const info = getInfo()
+  // console.log("#####TX OBJ", txObj)
   return (
     <>
       <ScrollablePage>
@@ -389,13 +423,13 @@ export default function AddLiquidity({
           >
             {!hasExistingPosition && (
               <Row justifyContent="flex-end" style={{ width: 'fit-content', minWidth: 'fit-content' }}>
-                <MediumOnly>
+                {/* <MediumOnly>
                   <ButtonText onClick={clearAll} margin="0 15px 0 0">
                     <ThemedText.Blue fontSize="12px">
                       <Trans>Clear All</Trans>
                     </ThemedText.Blue>
                   </ButtonText>
-                </MediumOnly>
+                </MediumOnly> */}
                 {baseCurrency && quoteCurrency ? (
                   <RateToggle
                     currencyA={baseCurrency}
@@ -418,9 +452,9 @@ export default function AddLiquidity({
           <Wrapper>
             {/* <ResponsiveTwoColumns wide={!hasExistingPosition}> */}
             {/* <AutoColumn gap="lg"> */}
-            {info?.flag && (
+            {infoObj?.flag && (
               <InfoBox
-                message={<Trans>{`Long term swap processing block: ${info.id}`}</Trans>}
+                message={<Trans>{`Processing simulation block: ${infoObj?.id}`}</Trans>}
                 icon={<Loader size="40px" stroke={theme.text4} />}
               />
             )}
@@ -520,7 +554,7 @@ export default function AddLiquidity({
 
             {!hasExistingPosition && acShowSetPriceRange ? null : (
               <div>
-                <RowBetween paddingBottom="20px">
+                {/* <RowBetween paddingBottom="20px">
                   <ThemedText.Label>
                     <Trans>Trade Length</Trans>
                   </ThemedText.Label>
@@ -533,11 +567,10 @@ export default function AddLiquidity({
                   handleFeePoolSelect={handleFeePoolSelect}
                   currencyA={baseCurrency ?? undefined}
                   currencyB={quoteCurrency ?? undefined}
-                />
+                /> */}
 
                 <div style={{ width: '100%', height: '20px' }} />
 
-                {/* <Buttons /> */}
                 <SimulateButtons />
               </div>
             )}
@@ -571,7 +604,7 @@ export default function AddLiquidity({
               Transactions
             </TYPE.main>
             <PageWrapper wide={!hasExistingPosition}>
-              <TransactionTable transactions={sampleTransactions} />
+              <TransactionTable transactions={txObj} />
               {addIsUnsupported && (
                 <UnsupportedCurrencyFooter
                   show={addIsUnsupported}

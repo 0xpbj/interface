@@ -19,18 +19,18 @@ import {
   removeSerializedToken,
   SerializedPair,
   SerializedToken,
+  updateBlockDelay,
   updateHideClosedPositions,
+  updateMarketData,
+  updateMarketReserves,
+  updateSimulateArbitrage,
   updateUserClientSideRouter,
   updateUserDarkMode,
   updateUserDeadline,
   updateUserExpertMode,
-  updateSimulateArbitrage,
-  updateMarketData,
-  updateMarketReserves,
   updateUserLocale,
   updateUserSlippageTolerance,
   updateUserTradeDuration,
-  updateBlockDelay,
 } from './actions'
 
 function serializeToken(token: Token): SerializedToken {

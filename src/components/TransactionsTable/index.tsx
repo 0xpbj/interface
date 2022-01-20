@@ -9,7 +9,7 @@ import useTheme from 'hooks/useTheme'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components/macro'
 import { ExternalLink, TYPE } from 'theme'
-import { Transaction, TransactionType } from 'types'
+import { LTTransaction, Transaction, TransactionType } from 'types'
 import { getEtherscanLink, shortenAddress } from 'utils'
 import { formatTime } from 'utils/date'
 import { formatAmount, formatDollarAmount } from 'utils/numbers'
@@ -99,16 +99,28 @@ const DataRow = ({ transaction, color }: { transaction: Transaction; color?: str
 
   return (
     <ResponsiveGrid>
-      <ExternalLink href={getEtherscanLink(1, transaction.hash, 'transaction')}>
-        <Label color={color ?? theme.blue1} fontWeight={400}>
-          {transaction.type === TransactionType.MINT
-            ? `Add ${transaction.token0Symbol} and ${transaction.token1Symbol}`
-            : transaction.type === TransactionType.SWAP
-            ? `Swap ${inputTokenSymbol} for ${outputTokenSymbol}`
-            : `Remove ${transaction.token0Symbol} and ${transaction.token1Symbol}`}
-        </Label>
-      </ExternalLink>
-      <Label end={1} fontWeight={400}>
+      <Label color={color ?? theme.blue1} fontWeight={400}>
+        {transaction.type === TransactionType.MINT
+          ? `Add ${transaction.token0Symbol} and ${transaction.token1Symbol}`
+          : transaction.type === TransactionType.SWAP
+          ? `Swap ${inputTokenSymbol} for ${outputTokenSymbol}`
+          : transaction.type === TransactionType.LTSWAP
+          ? `LT Swap ${inputTokenSymbol} for ${outputTokenSymbol}`
+          : transaction.type === TransactionType.WITHDRAW
+          ? `Withdraw ${outputTokenSymbol}`
+          : transaction.type === TransactionType.EXEC_VIRTUAL
+          ? `Execute virtual order`
+          : transaction.type === TransactionType.INITIAL_LIQUIDITY
+          ? `Add initial liquidity`
+          : transaction.type === TransactionType.DEPLOY
+          ? `Deploy TWAMM contract`
+          : transaction.type === TransactionType.APPROVE
+          ? `Approve wallet to spend tokens`
+          : transaction.type === TransactionType.ARB_SWAP
+          ? `Arbitrage run on underlying pool`
+          : `Remove ${transaction.token0Symbol} and ${transaction.token1Symbol}`}
+      </Label>
+      {/* <Label end={1} fontWeight={400}>
         {formatDollarAmount(transaction.amountUSD)}
       </Label>
       <Label end={1} fontWeight={400}>
@@ -116,14 +128,15 @@ const DataRow = ({ transaction, color }: { transaction: Transaction; color?: str
       </Label>
       <Label end={1} fontWeight={400}>
         <HoverInlineText text={`${formatAmount(abs1)}  ${transaction.token1Symbol}`} maxCharacters={16} />
-      </Label>
+      </Label> */}
       <Label end={1} fontWeight={400}>
         <ExternalLink href={getEtherscanLink(1, transaction.sender, 'address')} style={{ color: color ?? theme.blue1 }}>
           {shortenAddress(transaction.sender)}
         </ExternalLink>
       </Label>
       <Label end={1} fontWeight={400}>
-        {formatTime(transaction.timestamp, 0)}
+        {/* {formatTime(transaction.timestamp, 0)} */}
+        {Math.floor(parseFloat(transaction.timestamp))}
       </Label>
     </ResponsiveGrid>
   )
@@ -134,7 +147,7 @@ export default function TransactionTable({
   maxItems = 10,
   color,
 }: {
-  transactions: Transaction[]
+  transactions: LTTransaction[]
   maxItems?: number
   color?: string
 }) {
@@ -158,7 +171,7 @@ export default function TransactionTable({
   }, [maxItems, transactions])
 
   // filter on txn type
-  const [txFilter, setTxFilter] = useState<TransactionType | undefined>(TransactionType.SWAP)
+  const [txFilter, setTxFilter] = useState<TransactionType | undefined>(undefined)
 
   const sortedTransactions = useMemo(() => {
     return transactions
@@ -166,7 +179,7 @@ export default function TransactionTable({
           .slice()
           .sort((a, b) => {
             if (a && b) {
-              return a[sortField as keyof Transaction] > b[sortField as keyof Transaction]
+              return Number(a[sortField as keyof Transaction]) > Number(b[sortField as keyof Transaction])
                 ? (sortDirection ? -1 : 1) * 1
                 : (sortDirection ? -1 : 1) * -1
             } else {
@@ -214,9 +227,9 @@ export default function TransactionTable({
             </SortText> */}
             <SortText
               onClick={() => {
-                setTxFilter(TransactionType.SWAP)
+                setTxFilter(undefined)
               }}
-              active={txFilter === TransactionType.SWAP}
+              active={txFilter === undefined}
             >
               Operation
             </SortText>
@@ -237,7 +250,7 @@ export default function TransactionTable({
               Removes
             </SortText> */}
           </RowFixed>
-          <ClickableText color={theme.text2} onClick={() => handleSort(SORT_FIELD.amountUSD)} end={1}>
+          {/* <ClickableText color={theme.text2} onClick={() => handleSort(SORT_FIELD.amountUSD)} end={1}>
             Total Value {arrow(SORT_FIELD.amountUSD)}
           </ClickableText>
           <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.amountToken0)}>
@@ -245,12 +258,12 @@ export default function TransactionTable({
           </ClickableText>
           <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.amountToken1)}>
             Token Amount {arrow(SORT_FIELD.amountToken1)}
-          </ClickableText>
+          </ClickableText> */}
           <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.sender)}>
             Account {arrow(SORT_FIELD.sender)}
           </ClickableText>
           <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.timestamp)}>
-            Time {arrow(SORT_FIELD.timestamp)}
+            Block {arrow(SORT_FIELD.timestamp)}
           </ClickableText>
         </ResponsiveGrid>
         <Break />
