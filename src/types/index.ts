@@ -25,7 +25,12 @@ export enum TransactionType {
   MINT,
   BURN,
   LTSWAP,
-  ARBITRAGE,
+  WITHDRAW,
+  EXEC_VIRTUAL,
+  INITIAL_LIQUIDITY,
+  DEPLOY,
+  APPROVE,
+  ARB_SWAP
 }
 
 export type Transaction = {
