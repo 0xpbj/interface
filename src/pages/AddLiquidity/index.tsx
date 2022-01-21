@@ -185,8 +185,10 @@ export default function AddLiquidity({
           setChartObj((oldArray) => [
             ...oldArray,
             {
+              //ACFTW, I am trying to use blocknumbers instead of date timestamps
+              //of course everything downstream is breaking because of it...
               timestamp: blockNumber.toString(),
-              volumeUSD: reserveA,
+              totalValueLockedUSD: reserveA,
             },
           ])
         } else {
@@ -242,13 +244,6 @@ export default function AddLiquidity({
       marketData,
       marketReserves
     )
-    // More stuff to recycle ...
-    // if (userSlippageTolerance !== 'auto') {
-    //   numIntervals = Number(userSlippageTolerance.toFixed(0)) / blockInterval
-    //   await play(amt, 0, numIntervals, blockInterval)
-    // } else {
-    //   await play(amt, 0, 10, 10)
-    // }
   }
 
   const handlePause = async () => {
@@ -356,9 +351,12 @@ export default function AddLiquidity({
   const addIsUnsupported = useIsSwapUnsupported(currencies?.CURRENCY_A, currencies?.CURRENCY_B)
 
   const formattedTvlData = useMemo(() => {
-    if (sampleChartData) {
-      return sampleChartData.map((day) => {
+    if (chartObj) {
+      return chartObj.map((day) => {
         return {
+          //ACFTW, it expects date here, but I'm sending it a block number
+          //everything downstream in LineChart/index.tsx breaks because the info
+          //can't be parsed into date information (mm, dd, yy)
           time: unixToDate(day.date),
           value: day.totalValueLockedUSD,
         }
@@ -366,7 +364,7 @@ export default function AddLiquidity({
     } else {
       return []
     }
-  }, [sampleChartData])
+  }, [chartObj])
 
   const clearAll = useCallback(() => {
     onFieldAInput('')
