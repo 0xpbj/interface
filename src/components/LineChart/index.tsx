@@ -60,13 +60,17 @@ const LineChart = ({
   const [chartCreated, setChart] = useState<IChartApi | undefined>()
   const dataPrev = usePrevious(data)
 
+  // PBFS:  This causes mucho flicker--it's sensible for Uni, not for us.
+  //        Commented out for now--not sure what side effects it will cause when
+  //        we introduce more trades, reset, etc.:
+  //
   // reset on new data
-  useEffect(() => {
-    if (dataPrev !== data && chartCreated) {
-      chartCreated.resize(0, 0)
-      setChart(undefined)
-    }
-  }, [data, dataPrev, chartCreated])
+  // useEffect(() => {
+  //   if (dataPrev !== data && chartCreated) {
+  //     chartCreated.resize(0, 0)
+  //     setChart(undefined)
+  //   }
+  // }, [data, dataPrev, chartCreated])
 
   // for reseting value on hover exit
   const currentValue = data[data.length - 1]?.value

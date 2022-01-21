@@ -18,7 +18,7 @@ import {
 } from 'state/user/hooks'
 import { TYPE } from 'theme'
 import { LTTransaction } from 'types'
-import { unixToDate } from 'utils/date'
+import { timestampToYYYYMMDD, unixToDate } from 'utils/date'
 
 import { ButtonPrimary, ButtonRed, ButtonYellow } from '../../components/Button'
 import CurrencyInputPanel from '../../components/CurrencyInputPanel'
@@ -46,6 +46,10 @@ import { CurrencyDropdown, DynamicSection, PageWrapper, ScrollablePage, Wrapper 
 import { TransactionType } from 'types'
 
 const DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE = new Percent(50, 10_000)
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const BLOCK_TIME_MS = DAY_MS   // 14 seconds -> 1d b/c of bad chart solution for now
+let fakeDateMs = Date.now() - (100 * 365 * DAY_MS)  // ~100 years ago (each block is a day, gives us ~36500 blocks)
 
 type InfoType = {
   id: number
@@ -185,12 +189,19 @@ export default function AddLiquidity({
           setChartObj((oldArray) => [
             ...oldArray,
             {
-              //ACFTW, I am trying to use blocknumbers instead of date timestamps
-              //of course everything downstream is breaking because of it...
-              timestamp: blockNumber.toString(),
-              totalValueLockedUSD: reserveA,
+              // PBFS:  This chart component is not the right tool for the job. Find
+              //        one that handles updates better and scrolling.
+              //        Until then, I've mapped each block to a day and we start the chart
+              //        at 100 years ago to give us ~36k blocks.
+              //        time below represents a block, value represents reserveA
+              //        Another thing we'd want to do is draw a second series on this chart.
+              //        It's a great component (https://github.com/tradingview/lightweight-charts),
+              //        just not for what we're trying to do.
+              time: timestampToYYYYMMDD(fakeDateMs),
+              value: reserveA
             },
           ])
+          fakeDateMs += BLOCK_TIME_MS
         } else {
           setInfoObj({
             id: -1,
@@ -352,15 +363,7 @@ export default function AddLiquidity({
 
   const formattedTvlData = useMemo(() => {
     if (chartObj) {
-      return chartObj.map((day) => {
-        return {
-          //ACFTW, it expects date here, but I'm sending it a block number
-          //everything downstream in LineChart/index.tsx breaks because the info
-          //can't be parsed into date information (mm, dd, yy)
-          time: unixToDate(day.date),
-          value: day.totalValueLockedUSD,
-        }
-      })
+      return [...chartObj]  // PBFS:  Shallow copy (otherwise charting code doesn't work)
     } else {
       return []
     }

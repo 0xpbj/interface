@@ -1,5 +1,14 @@
 import dayjs from 'dayjs'
 
+export function timestampToYYYYMMDD(timestamp: number): string {
+  const d = new Date(timestamp)
+  const yyyy = d.getUTCFullYear().toString()
+  const mm = d.getUTCMonth() < 9 ? `0${d.getUTCMonth()+1}` : `${d.getUTCMonth()+1}`
+  const dd = d.getUTCDate() < 10 ? `0${d.getUTCDate()}` : d.getUTCDate().toString()
+
+  return `${yyyy}-${mm}-${dd}`
+}
+
 export function unixToDate(unix: number, format = 'YYYY-MM-DD'): string {
   return dayjs.unix(unix).format(format)
 }
