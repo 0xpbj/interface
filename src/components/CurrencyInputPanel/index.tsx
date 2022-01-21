@@ -276,7 +276,7 @@ export default function CurrencyInputPanel({
               <LoadingOpacityContainer $loading={loading}>
                 <FiatValue fiatValue={fiatValue} priceImpact={priceImpact} />
               </LoadingOpacityContainer>
-              {account ? (
+              {0 ? (
                 <RowFixed style={{ height: '17px' }}>
                   <ThemedText.Body
                     onClick={onMax}

@@ -532,7 +532,7 @@ export default function AddLiquidity({
               />
               {/* AC disable entry of 2nd amount b/c swap, not mint */}
             </DynamicSection>
-            <DynamicSection disabled={true}>
+            <DynamicSection>
               <CurrencyInputPanel
                 value={formattedAmounts[Field.CURRENCY_B]}
                 onUserInput={onFieldBInput}
@@ -545,6 +545,7 @@ export default function AddLiquidity({
                 id="add-liquidity-input-tokenb"
                 showCommonBases
                 locked={depositBDisabled}
+                hideInput={false}
               />
               {/* </AutoColumn> */}
               <div style={{ width: '100%', height: '20px' }} />
