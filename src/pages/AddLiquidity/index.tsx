@@ -162,7 +162,7 @@ export default function AddLiquidity({
           const { blockNumber, reserveA, reserveB, transactions } = data
           for (const tx of transactions) {
             const { hash, from, to, uxType, gasUsed, nonce } = tx
-            if (uxType !== TransactionType.EXEC_VIRTUAL) {
+            // if (uxType !== TransactionType.EXEC_VIRTUAL) {
               setTxObj((oldArray) => [
                 ...oldArray,
                 {
@@ -179,7 +179,7 @@ export default function AddLiquidity({
                   amountToken1: reserveB,
                 },
               ])
-            }
+            // }
           }
           setInfoObj({
             id: blockNumber,
