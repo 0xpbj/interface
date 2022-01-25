@@ -17,7 +17,7 @@ import { ThemedText } from '../../theme'
 import { ButtonGray } from '../Button'
 import CurrencyLogo from '../CurrencyLogo'
 import DoubleCurrencyLogo from '../DoubleLogo'
-import { Input as NumericalInput } from '../NumericalInput'
+import { Input as NumericalDisplay } from '../NumericalDisplay'
 import { RowBetween, RowFixed } from '../Row'
 import CurrencySearchModal from '../SearchModal/CurrencySearchModal'
 import { FiatValue } from './FiatValue'
@@ -150,16 +150,16 @@ const StyledBalanceMax = styled.button<{ disabled?: boolean }>`
   }
 `
 
-const StyledNumericalInput = styled(NumericalInput)<{ $loading: boolean }>`
+const StyledNumericalInput = styled(NumericalDisplay)<{ $loading: boolean }>`
   ${loadingOpacityMixin};
   text-align: left;
 `
 
-interface CurrencyInputPanelProps {
+interface CurrencyDisplayPanelProps {
   value: string
-  onUserInput: (value: string) => void
+  onUserInput?: (value: string) => void
   onMax?: () => void
-  showMaxButton: boolean
+  showMaxButton?: boolean
   label?: ReactNode
   onCurrencySelect?: (currency: Currency) => void
   currency?: Currency | null
@@ -178,7 +178,7 @@ interface CurrencyInputPanelProps {
   loading?: boolean
 }
 
-export default function CurrencyInputPanel({
+export default function CurrencyDisplayPanel({
   value,
   onUserInput,
   onMax,
@@ -199,7 +199,7 @@ export default function CurrencyInputPanel({
   locked = false,
   loading = false,
   ...rest
-}: CurrencyInputPanelProps) {
+}: CurrencyDisplayPanelProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const { account } = useActiveWeb3React()
   const selectedCurrencyBalance = useCurrencyBalance(account ?? undefined, currency ?? undefined)
@@ -223,14 +223,7 @@ export default function CurrencyInputPanel({
       )}
       <Container hideInput={hideInput}>
         <InputRow style={hideInput ? { padding: '0', borderRadius: '8px' } : {}} selected={!onCurrencySelect}>
-          {!hideInput && (
-            <StyledNumericalInput
-              className="token-amount-input"
-              value={value}
-              onUserInput={onUserInput}
-              $loading={loading}
-            />
-          )}
+          {!hideInput && <StyledNumericalInput className="token-amount-input" value={value} $loading={loading} />}
 
           <CurrencySelect
             visible={currency !== undefined}

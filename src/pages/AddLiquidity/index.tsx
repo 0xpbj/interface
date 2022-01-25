@@ -18,18 +18,19 @@ import {
 } from 'state/user/hooks'
 import { TYPE } from 'theme'
 import { LTTransaction } from 'types'
-import { timestampToYYYYMMDD, unixToDate } from 'utils/date'
+import { TransactionType } from 'types'
+import { timestampToYYYYMMDD } from 'utils/date'
 
+import AreaChart from '../../components/AreaChart'
 import { ButtonPrimary, ButtonRed, ButtonYellow } from '../../components/Button'
+import CurrencyDisplayPanel from '../../components/CurrencyDisplayPanel'
 import CurrencyInputPanel from '../../components/CurrencyInputPanel'
-import LineChart from '../../components/LineChart'
 import Loader from '../../components/Loader'
 import { AddRemoveTabs } from '../../components/NavigationTabs'
 import RateToggle from '../../components/RateToggle'
 import Row, { RowBetween } from '../../components/Row'
 import { SwitchLocaleLink } from '../../components/SwitchLocaleLink'
 import TransactionTable from '../../components/TransactionsTable'
-import { sampleChartData } from '../../constants/sampleChartData'
 import { WRAPPED_NATIVE_CURRENCY } from '../../constants/tokens'
 import { useCurrency } from '../../hooks/Tokens'
 import { useDerivedPositionInfo } from '../../hooks/useDerivedPositionInfo'
@@ -42,14 +43,13 @@ import { Bound, Field } from '../../state/mint/v3/actions'
 import { ThemedText } from '../../theme'
 import { currencyId } from '../../utils/currencyId'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
-import { CurrencyDropdown, DynamicSection, PageWrapper, ScrollablePage, Wrapper } from './styled'
-import { TransactionType } from 'types'
+import { CurrencyDropdown, DynamicSection, DynamicSectionStacked, PageWrapper, ScrollablePage, Wrapper } from './styled'
 
 const DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE = new Percent(50, 10_000)
 
 const DAY_MS = 24 * 60 * 60 * 1000
-const BLOCK_TIME_MS = DAY_MS   // 14 seconds -> 1d b/c of bad chart solution for now
-let fakeDateMs = Date.now() - (100 * 365 * DAY_MS)  // ~100 years ago (each block is a day, gives us ~36500 blocks)
+const BLOCK_TIME_MS = DAY_MS // 14 seconds -> 1d b/c of bad chart solution for now
+let fakeDateMs = Date.now() - 100 * 365 * DAY_MS // ~100 years ago (each block is a day, gives us ~36500 blocks)
 
 type InfoType = {
   id: number
@@ -152,6 +152,8 @@ export default function AddLiquidity({
   const [infoObj, setInfoObj] = useState<InfoType | undefined>()
   const [txObj, setTxObj] = useState<LTTransaction[]>([])
   const [chartObj, setChartObj] = useState<any[]>([])
+  const [areaAObj, setAreaAObj] = useState<any[]>([])
+  const [areaBObj, setAreaBObj] = useState<any[]>([])
 
   useEffect(() => {
     if (_clientSocket) {
@@ -168,7 +170,7 @@ export default function AddLiquidity({
                 {
                   type: uxType,
                   hash,
-                  timestamp: (blockNumber + nonce/10000).toString(),
+                  timestamp: (blockNumber + nonce / 10000).toString(),
                   sender: from,
                   token0Symbol: 'USDC',
                   token1Symbol: 'ETH',
@@ -198,7 +200,21 @@ export default function AddLiquidity({
               //        It's a great component (https://github.com/tradingview/lightweight-charts),
               //        just not for what we're trying to do.
               time: timestampToYYYYMMDD(fakeDateMs),
-              value: reserveA
+              value: reserveA,
+            },
+          ])
+          setAreaAObj((oldArray) => [
+            ...oldArray,
+            {
+              time: timestampToYYYYMMDD(fakeDateMs),
+              value: reserveA,
+            },
+          ])
+          setAreaBObj((oldArray) => [
+            ...oldArray,
+            {
+              time: timestampToYYYYMMDD(fakeDateMs),
+              value: reserveB,
             },
           ])
           fakeDateMs += BLOCK_TIME_MS
@@ -267,6 +283,8 @@ export default function AddLiquidity({
     setInfoObj(undefined)
     setTxObj([])
     setChartObj([])
+    setAreaAObj([])
+    setAreaBObj([])
   }
 
   // useTestAsClient()
@@ -363,11 +381,27 @@ export default function AddLiquidity({
 
   const formattedTvlData = useMemo(() => {
     if (chartObj) {
-      return [...chartObj]  // PBFS:  Shallow copy (otherwise charting code doesn't work)
+      return [...chartObj] // PBFS:  Shallow copy (otherwise charting code doesn't work)
     } else {
       return []
     }
   }, [chartObj])
+
+  const formattedAData = useMemo(() => {
+    if (areaAObj) {
+      return [...areaAObj] // PBFS:  Shallow copy (otherwise charting code doesn't work)
+    } else {
+      return []
+    }
+  }, [areaAObj])
+
+  const formattedBData = useMemo(() => {
+    if (areaBObj) {
+      return [...areaBObj] // PBFS:  Shallow copy (otherwise charting code doesn't work)
+    } else {
+      return []
+    }
+  }, [areaBObj])
 
   const clearAll = useCallback(() => {
     onFieldAInput('')
@@ -409,7 +443,6 @@ export default function AddLiquidity({
   const acForceEnableSwapAmount = true
   const acShowSetPriceRange = false
   const theme = useTheme()
-  // console.log("#####TX OBJ", txObj)
   return (
     <>
       <ScrollablePage>
@@ -530,9 +563,11 @@ export default function AddLiquidity({
                 fiatValue={usdcValues[Field.CURRENCY_A]}
                 showCommonBases
                 locked={depositADisabled}
+                hideBalance={false}
               />
               {/* AC disable entry of 2nd amount b/c swap, not mint */}
             </DynamicSection>
+            {/* <DynamicSection> */}
             <DynamicSection>
               <CurrencyInputPanel
                 value={formattedAmounts[Field.CURRENCY_B]}
@@ -541,14 +576,40 @@ export default function AddLiquidity({
                   onFieldBInput(maxAmounts[Field.CURRENCY_B]?.toExact() ?? '')
                 }}
                 showMaxButton={!atMaxAmounts[Field.CURRENCY_B]}
-                fiatValue={usdcValues[Field.CURRENCY_B]}
                 currency={currencies[Field.CURRENCY_B] ?? null}
                 id="add-liquidity-input-tokenb"
+                fiatValue={usdcValues[Field.CURRENCY_B]}
                 showCommonBases
                 locked={depositBDisabled}
-                hideInput={false}
+                hideBalance={false}
               />
-              {/* </AutoColumn> */}
+              <CurrencyDisplayPanel
+                value={"1000"}
+                fiatValue={usdcValues[Field.CURRENCY_B]}
+                currency={currencies[Field.CURRENCY_B] ?? null}
+                id="add-liquidity-input-tokenb1"
+                locked={depositBDisabled}
+                hideInput={false}
+                hideBalance={false}
+              />
+              <CurrencyDisplayPanel
+                value={"2000"}
+                fiatValue={usdcValues[Field.CURRENCY_B]}
+                currency={currencies[Field.CURRENCY_B] ?? null}
+                id="add-liquidity-input-tokenb2"
+                locked={depositBDisabled}
+                hideInput={false}
+                hideBalance={false}
+              />
+              <CurrencyDisplayPanel
+                value={"3000"}
+                fiatValue={usdcValues[Field.CURRENCY_B]}
+                currency={currencies[Field.CURRENCY_B] ?? null}
+                id="add-liquidity-input-tokenb3"
+                locked={depositBDisabled}
+                hideInput={false}
+                hideBalance={false}
+              />
               <div style={{ width: '100%', height: '20px' }} />
             </DynamicSection>
             {/* </div> */}
@@ -587,15 +648,16 @@ export default function AddLiquidity({
             </TYPE.main>
             <PageWrapper wide={!hasExistingPosition}>
               <Wrapper>
-                <LineChart
+                {/* <LineChart
                   data={formattedTvlData}
                   setLabel={setValueLabel}
                   color={'#2172E5'}
                   minHeight={340}
                   setValue={setLatestValue}
-                />
+                /> */}
                 {/*value={formattedTvlData ? formatDollarAmount(formattedTvlData[formattedTvlData.length - 1]?.value) : 0}
               label={valueLabel}*/}
+                <AreaChart dataA={formattedAData} dataB={formattedBData} color={'#2172E5'} minHeight={340} />
               </Wrapper>
             </PageWrapper>
           </>

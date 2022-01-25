@@ -89,6 +89,16 @@ export const RightContainer = styled(AutoColumn)`
   `};
 `
 
+export const DynamicSectionStacked = styled(AutoColumn)<{ disabled?: boolean }>`
+  opacity: ${({ disabled }) => (disabled ? '0.2' : '1')};
+  pointer-events: ${({ disabled }) => (disabled ? 'none' : 'initial')};
+  justify-content: space-between;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+`
+
 export const StackedContainer = styled.div`
   display: grid;
 `
