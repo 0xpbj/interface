@@ -18,7 +18,6 @@ import {
 } from 'state/user/hooks'
 import { TYPE } from 'theme'
 import { LTTransaction } from 'types'
-import { TransactionType } from 'types'
 import { timestampToYYYYMMDD } from 'utils/date'
 
 import AreaChart from '../../components/AreaChart'
@@ -43,7 +42,7 @@ import { Bound, Field } from '../../state/mint/v3/actions'
 import { ThemedText } from '../../theme'
 import { currencyId } from '../../utils/currencyId'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
-import { CurrencyDropdown, DynamicSection, DynamicSectionStacked, PageWrapper, ScrollablePage, Wrapper } from './styled'
+import { CurrencyDropdown, DynamicSection, PageWrapper, ScrollablePage, Wrapper } from './styled'
 
 const DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE = new Percent(50, 10_000)
 
@@ -55,6 +54,10 @@ type InfoType = {
   id: number
   command: string
   flag: boolean
+}
+
+function numberWithCommas(x: any) {
+  return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",")
 }
 
 function InfoBox({ message, icon }: { message?: ReactNode; icon: ReactNode }) {
@@ -102,6 +105,7 @@ export default function AddLiquidity({
 
   const {
     ticks,
+    price,
     pricesAtTicks,
     dependentField,
     parsedAmounts,
@@ -144,8 +148,8 @@ export default function AddLiquidity({
   const [marketData] = useMarketData()
   const [marketReserves] = useMarketReserves()
 
-  const [valueLabel, setValueLabel] = useState<string | undefined>()
-  const [latestValue, setLatestValue] = useState<number | undefined>()
+  // const [valueLabel, setValueLabel] = useState<string | undefined>()
+  // const [latestValue, setLatestValue] = useState<number | undefined>()
   // const CHECK_IF_SWAP_IS_ACTIVE = true
   const [isSwapActive, setSwapActive] = useState<boolean | undefined>()
 
@@ -165,22 +169,22 @@ export default function AddLiquidity({
           for (const tx of transactions) {
             const { hash, from, to, uxType, gasUsed, nonce } = tx
             // if (uxType !== TransactionType.EXEC_VIRTUAL) {
-              setTxObj((oldArray) => [
-                ...oldArray,
-                {
-                  type: uxType,
-                  hash,
-                  timestamp: (blockNumber + nonce / 10000).toString(),
-                  sender: from,
-                  token0Symbol: 'USDC',
-                  token1Symbol: 'ETH',
-                  token0Address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-                  token1Address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-                  amountUSD: gasUsed,
-                  amountToken0: reserveA,
-                  amountToken1: reserveB,
-                },
-              ])
+            setTxObj((oldArray) => [
+              ...oldArray,
+              {
+                type: uxType,
+                hash,
+                timestamp: (blockNumber + nonce / 10000).toString(),
+                sender: from,
+                token0Symbol: 'USDC',
+                token1Symbol: 'ETH',
+                token0Address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                token1Address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+                amountUSD: gasUsed,
+                amountToken0: reserveA,
+                amountToken1: reserveB,
+              },
+            ])
             // }
           }
           setInfoObj({
@@ -443,6 +447,14 @@ export default function AddLiquidity({
   const acForceEnableSwapAmount = true
   const acShowSetPriceRange = false
   const theme = useTheme()
+  const priceValue = usdcValues[Field.CURRENCY_A]?.toSignificant(6, { groupSeparator: '' })
+  console.log('ETH PRICE', priceValue)
+  if (priceValue) {
+    console.log('Parsed ETH Price', parseFloat(priceValue))
+  }
+  const maxValue = priceValue ? numberWithCommas(Number.parseFloat(priceValue).toPrecision(6)) : '0'
+  const lowValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.9).toPrecision(6)) : '0'
+  const midValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.95).toPrecision(6)) : '0'
   return (
     <>
       <ScrollablePage>
@@ -569,7 +581,7 @@ export default function AddLiquidity({
             </DynamicSection>
             {/* <DynamicSection> */}
             <DynamicSection>
-              <CurrencyInputPanel
+              {/* <CurrencyInputPanel
                 value={formattedAmounts[Field.CURRENCY_B]}
                 onUserInput={onFieldBInput}
                 onMax={() => {
@@ -582,33 +594,42 @@ export default function AddLiquidity({
                 showCommonBases
                 locked={depositBDisabled}
                 hideBalance={false}
-              />
+              /> */}
+              <TYPE.main fontSize="12px" style={{ marginTop: '12px' }}>
+                Minimum Return
+              </TYPE.main>
               <CurrencyDisplayPanel
-                value={"1000"}
+                value={lowValue}
                 fiatValue={usdcValues[Field.CURRENCY_B]}
                 currency={currencies[Field.CURRENCY_B] ?? null}
                 id="add-liquidity-input-tokenb1"
                 locked={depositBDisabled}
                 hideInput={false}
-                hideBalance={false}
+                hideBalance={true}
               />
+              <TYPE.main fontSize="12px" style={{ marginTop: '8px' }}>
+                Average Return
+              </TYPE.main>
               <CurrencyDisplayPanel
-                value={"2000"}
+                value={midValue}
                 fiatValue={usdcValues[Field.CURRENCY_B]}
                 currency={currencies[Field.CURRENCY_B] ?? null}
                 id="add-liquidity-input-tokenb2"
                 locked={depositBDisabled}
                 hideInput={false}
-                hideBalance={false}
+                hideBalance={true}
               />
+              <TYPE.main fontSize="12px" style={{ marginTop: '8px' }}>
+                Maximum Return
+              </TYPE.main>
               <CurrencyDisplayPanel
-                value={"3000"}
+                value={maxValue}
                 fiatValue={usdcValues[Field.CURRENCY_B]}
                 currency={currencies[Field.CURRENCY_B] ?? null}
                 id="add-liquidity-input-tokenb3"
                 locked={depositBDisabled}
                 hideInput={false}
-                hideBalance={false}
+                hideBalance={true}
               />
               <div style={{ width: '100%', height: '20px' }} />
             </DynamicSection>

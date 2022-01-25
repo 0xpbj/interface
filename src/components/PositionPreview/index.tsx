@@ -34,7 +34,6 @@ export const PositionPreview = ({
 
   const currency0 = unwrappedToken(position.pool.token0)
   const currency1 = unwrappedToken(position.pool.token1)
-
   // track which currency should be base
   const [baseCurrency, setBaseCurrency] = useState(
     baseCurrencyDefault
