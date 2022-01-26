@@ -97,28 +97,25 @@ const DataRow = ({ transaction, color }: { transaction: Transaction; color?: str
   const activeNetwork = 'mainnet'
   const theme = useTheme()
 
+  const operations: any = {
+    [TransactionType.SWAP]: `Swap ${inputTokenSymbol} for ${outputTokenSymbol}`,
+    [TransactionType.MINT]: `Add liquidity (${transaction.token0Symbol}, ${transaction.token1Symbol})`,
+    [TransactionType.BURN]: `Remove liquidity (${transaction.token0Symbol}, ${transaction.token1Symbol})`,
+    [TransactionType.LTSWAP]: `LT Swap ${inputTokenSymbol} for ${outputTokenSymbol}`,
+    [TransactionType.WITHDRAW]: `Withdraw ${outputTokenSymbol}`,
+    [TransactionType.EXEC_VIRTUAL]: `Execute virtual order`,
+    [TransactionType.INITIAL_LIQUIDITY]: `Initial liquidity (${transaction.token0Symbol}, ${transaction.token1Symbol})`,
+    [TransactionType.DEPLOY]: `Deploy TWAMM contract`,
+    [TransactionType.APPROVE]: `Wallet token approval.`,
+    [TransactionType.ARB_SWAP]: `Arbitrage ${inputTokenSymbol} for ${outputTokenSymbol}`,
+  }
+  const txnType: any = Number(transaction.type)
+  const opLabel = operations.hasOwnProperty(txnType) ? operations[txnType] : 'Unknown operation'
+
   return (
     <ResponsiveGrid>
       <Label color={color ?? theme.blue1} fontWeight={400}>
-        {transaction.type === TransactionType.MINT
-          ? `Add ${transaction.token0Symbol} and ${transaction.token1Symbol}`
-          : transaction.type === TransactionType.SWAP
-          ? `Swap ${inputTokenSymbol} for ${outputTokenSymbol}`
-          : transaction.type === TransactionType.LTSWAP
-          ? `LT Swap ${inputTokenSymbol} for ${outputTokenSymbol}`
-          : transaction.type === TransactionType.WITHDRAW
-          ? `Withdraw ${outputTokenSymbol}`
-          : transaction.type === TransactionType.EXEC_VIRTUAL
-          ? `Execute virtual order`
-          : transaction.type === TransactionType.INITIAL_LIQUIDITY
-          ? `Add initial liquidity`
-          : transaction.type === TransactionType.DEPLOY
-          ? `Deploy TWAMM contract`
-          : transaction.type === TransactionType.APPROVE
-          ? `Approve wallet to spend tokens`
-          : transaction.type === TransactionType.ARB_SWAP
-          ? `Arbitrage run on underlying pool`
-          : `Remove ${transaction.token0Symbol} and ${transaction.token1Symbol}`}
+        {opLabel}
       </Label>
       {/* <Label end={1} fontWeight={400}>
         {formatDollarAmount(transaction.amountUSD)}
@@ -129,6 +126,12 @@ const DataRow = ({ transaction, color }: { transaction: Transaction; color?: str
       <Label end={1} fontWeight={400}>
         <HoverInlineText text={`${formatAmount(abs1)}  ${transaction.token1Symbol}`} maxCharacters={16} />
       </Label> */}
+      <Label end={1} fontWeight={400}>
+        100 ETH {/* TODO */}
+      </Label>
+      <Label end={1} fontWeight={400}>
+        100 USDC {/* TODO */}
+      </Label>
       <Label end={1} fontWeight={400}>
         <ExternalLink href={getEtherscanLink(1, transaction.sender, 'address')} style={{ color: color ?? theme.blue1 }}>
           {shortenAddress(transaction.sender)}
@@ -259,6 +262,12 @@ export default function TransactionTable({
           <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.amountToken1)}>
             Token Amount {arrow(SORT_FIELD.amountToken1)}
           </ClickableText> */}
+          <ClickableText color={theme.text2} end={1} onClick={() => {return}}>
+            Sent
+          </ClickableText>
+          <ClickableText color={theme.text2} end={1} onClick={() => {return}}>
+            Received
+          </ClickableText>
           <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.sender)}>
             Account {arrow(SORT_FIELD.sender)}
           </ClickableText>

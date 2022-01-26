@@ -265,9 +265,12 @@ export default function AddLiquidity({
         2
       )}\n`
     )
+    // TODO: something more robust than this--this will only work for USDC/ETH hardcoded sim pair
+    const amtA = (currencyIdA !== 'ETH') ? amt : 0
+    const amtB = (currencyIdA !== 'ETH') ? 0 : amt
     await play(
-      amt,
-      0,
+      amtA,
+      amtB,
       numberOfIntervals,
       blockInterval,
       Number(blockDelay),
@@ -463,7 +466,6 @@ export default function AddLiquidity({
             defaultSlippage={DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE}
             showBackLink={!hasExistingPosition}
           />
-          <Wrapper>
             {infoObj?.flag && (
               <InfoBox
                 message={<Trans>{`Processing simulation block: ${infoObj?.id}`}</Trans>}
@@ -534,11 +536,13 @@ export default function AddLiquidity({
             </DynamicSection>
             {areaAObj?.length > 0 && isSwapActive && (
               <DynamicSection>
-                <TYPE.main fontSize="12px" style={{ marginTop: '12px' }}>
-                  Minimum Return
-                </TYPE.main>
+                <div style={{ width: '100%', height: '20px' }} />
+                <ThemedText.Label>
+                  <Trans>Estimated Return</Trans>
+                </ThemedText.Label>
+                <div style={{ width: '100%', height: '10px' }} />
                 <CurrencyDisplayPanel
-                  value={lowValue}
+                  value={`Min:  ${lowValue}\t\tMax:  ${maxValue}`}
                   fiatValue={usdcValues[Field.CURRENCY_B]}
                   currency={currencies[Field.CURRENCY_B] ?? null}
                   id="add-liquidity-input-tokenb1"
@@ -546,31 +550,6 @@ export default function AddLiquidity({
                   hideInput={false}
                   hideBalance={true}
                 />
-                <TYPE.main fontSize="12px" style={{ marginTop: '8px' }}>
-                  Average Return
-                </TYPE.main>
-                <CurrencyDisplayPanel
-                  value={midValue}
-                  fiatValue={usdcValues[Field.CURRENCY_B]}
-                  currency={currencies[Field.CURRENCY_B] ?? null}
-                  id="add-liquidity-input-tokenb2"
-                  locked={depositBDisabled}
-                  hideInput={false}
-                  hideBalance={true}
-                />
-                <TYPE.main fontSize="12px" style={{ marginTop: '8px' }}>
-                  Maximum Return
-                </TYPE.main>
-                <CurrencyDisplayPanel
-                  value={maxValue}
-                  fiatValue={usdcValues[Field.CURRENCY_B]}
-                  currency={currencies[Field.CURRENCY_B] ?? null}
-                  id="add-liquidity-input-tokenb3"
-                  locked={depositBDisabled}
-                  hideInput={false}
-                  hideBalance={true}
-                />
-                <div style={{ width: '100%', height: '20px' }} />
               </DynamicSection>
             )}
             {!hasExistingPosition && acShowSetPriceRange ? null : (
@@ -579,7 +558,6 @@ export default function AddLiquidity({
                 <SimulateButtons />
               </div>
             )}
-          </Wrapper>
         </PageWrapper>
 
         {areaAObj?.length > 0 && isSwapActive && (
@@ -588,9 +566,7 @@ export default function AddLiquidity({
               Pool Reserves
             </TYPE.main>
             <PageWrapper wide={!hasExistingPosition}>
-              <Wrapper>
                 <AreaChart dataA={formattedAData} dataB={formattedBData} color={'#2172E5'} minHeight={340} />
-              </Wrapper>
             </PageWrapper>
           </>
         )}

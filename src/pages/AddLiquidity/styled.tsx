@@ -4,14 +4,17 @@ import Input from 'components/NumericalInput'
 import { BodyWrapper } from 'pages/AppBody'
 import styled from 'styled-components/macro'
 
+const lowMax = '880px'    // All vals tied to this were 480px
+
 export const PageWrapper = styled(BodyWrapper)<{ wide: boolean }>`
-  max-width: ${({ wide }) => (wide ? '880px' : '480px')};
+  max-width: ${({ wide }) => (wide ? '880px' : lowMax)};
+  min-width: ${lowMax};
   width: 100%;
 
   padding: ${({ wide }) => (wide ? '10px' : '0')};
 
   ${({ theme }) => theme.mediaWidth.upToMedium`
-    max-width: 480px;
+    max-width: ${lowMax};
   `};
 `
 
@@ -21,7 +24,7 @@ export const PageWrapper = styled(BodyWrapper)<{ wide: boolean }>`
 export const Wrapper = styled.div`
   position: relative;
   padding: 26px 16px;
-  min-width: 640px;
+  min-width: 880px;
 
   ${({ theme }) => theme.mediaWidth.upToMedium`
     min-width: 400px;
@@ -37,7 +40,7 @@ export const ScrollablePage = styled.div`
   display: flex;
   flex-direction: column;
   ${({ theme }) => theme.mediaWidth.upToMedium`
-    max-width: 480px;
+    max-width: ${lowMax};
     margin: 0 auto;
   `};
 `
