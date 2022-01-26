@@ -57,7 +57,7 @@ type InfoType = {
 }
 
 function numberWithCommas(x: any) {
-  return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",")
+  return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ',')
 }
 
 function InfoBox({ message, icon }: { message?: ReactNode; icon: ReactNode }) {
@@ -422,11 +422,7 @@ export default function AddLiquidity({
   const SimulateButtons = () => {
     return (
       <div>
-        {/* <ThemedText.Label>
-          <Trans>Simulation</Trans>
-        </ThemedText.Label> */}
         <div style={{ width: '100%', height: '10px' }} />
-
         <RowBetween>
           <ButtonPrimary onClick={handlePlay} $borderRadius="12px" padding={'12px'}>
             <Trans>Play</Trans>
@@ -448,13 +444,13 @@ export default function AddLiquidity({
   const acShowSetPriceRange = false
   const theme = useTheme()
   const priceValue = usdcValues[Field.CURRENCY_A]?.toSignificant(6, { groupSeparator: '' })
-  console.log('ETH PRICE', priceValue)
-  if (priceValue) {
-    console.log('Parsed ETH Price', parseFloat(priceValue))
-  }
-  const maxValue = priceValue ? numberWithCommas(Number.parseFloat(priceValue).toPrecision(6)) : '0'
-  const lowValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.9).toPrecision(6)) : '0'
-  const midValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.95).toPrecision(6)) : '0'
+  // console.log('ETH PRICE', priceValue)
+  // if (priceValue) {
+  //   console.log('Parsed ETH Price', parseFloat(priceValue))
+  // }
+  const maxValue = priceValue ? numberWithCommas(Number.parseFloat(priceValue).toPrecision(9)) : '0'
+  const lowValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.96).toPrecision(9)) : '0'
+  const midValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.98).toPrecision(9)) : '0'
   return (
     <>
       <ScrollablePage>
@@ -466,38 +462,8 @@ export default function AddLiquidity({
             positionID={tokenId}
             defaultSlippage={DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE}
             showBackLink={!hasExistingPosition}
-          >
-            {!hasExistingPosition && (
-              <Row justifyContent="flex-end" style={{ width: 'fit-content', minWidth: 'fit-content' }}>
-                {/* <MediumOnly>
-                  <ButtonText onClick={clearAll} margin="0 15px 0 0">
-                    <ThemedText.Blue fontSize="12px">
-                      <Trans>Clear All</Trans>
-                    </ThemedText.Blue>
-                  </ButtonText>
-                </MediumOnly> */}
-                {baseCurrency && quoteCurrency ? (
-                  <RateToggle
-                    currencyA={baseCurrency}
-                    currencyB={quoteCurrency}
-                    handleRateToggle={() => {
-                      if (!ticksAtLimit[Bound.LOWER] && !ticksAtLimit[Bound.UPPER]) {
-                        onLeftRangeInput((invertPrice ? priceLower : priceUpper?.invert())?.toSignificant(6) ?? '')
-                        onRightRangeInput((invertPrice ? priceUpper : priceLower?.invert())?.toSignificant(6) ?? '')
-                        onFieldAInput(formattedAmounts[Field.CURRENCY_B] ?? '')
-                      }
-                      history.push(
-                        `/add/${currencyIdB as string}/${currencyIdA as string}${feeAmount ? '/' + feeAmount : ''}`
-                      )
-                    }}
-                  />
-                ) : null}
-              </Row>
-            )}
-          </AddRemoveTabs>
+          />
           <Wrapper>
-            {/* <ResponsiveTwoColumns wide={!hasExistingPosition}> */}
-            {/* <AutoColumn gap="lg"> */}
             {infoObj?.flag && (
               <InfoBox
                 message={<Trans>{`Processing simulation block: ${infoObj?.id}`}</Trans>}
@@ -507,14 +473,12 @@ export default function AddLiquidity({
             {!hasExistingPosition && (
               <>
                 <div>
-                  {/* <AutoColumn gap="md"> */}
                   <RowBetween paddingBottom="20px">
                     <ThemedText.Label>
                       <Trans>Select Pair</Trans>
                     </ThemedText.Label>
                   </RowBetween>
                   <div style={{ width: '100%', height: '10px' }} />
-
                   <RowBetween>
                     <CurrencyDropdown
                       value={formattedAmounts[Field.CURRENCY_A]}
@@ -529,9 +493,7 @@ export default function AddLiquidity({
                       id="add-liquidity-input-tokena"
                       showCommonBases
                     />
-
                     <div style={{ width: '12px' }} />
-
                     <CurrencyDropdown
                       value={formattedAmounts[Field.CURRENCY_B]}
                       hideInput={true}
@@ -546,23 +508,15 @@ export default function AddLiquidity({
                       showCommonBases
                     />
                   </RowBetween>
-                  {/* </AutoColumn>{' '} */}
                   <div style={{ width: '100%', height: '20px' }} />
                 </div>
               </>
             )}
-            {/* </AutoColumn> */}
-            {/* AC muckery to get single column ... */}
-            {/* </div>
-              
-              <div> */}
             <DynamicSection>
-              {/* <AutoColumn gap="md"> */}
               <ThemedText.Label>
                 {hasExistingPosition ? <Trans>Add more liquidity</Trans> : <Trans>Swap Amount</Trans>}
               </ThemedText.Label>
               <div style={{ width: '100%', height: '10px' }} />
-
               <CurrencyInputPanel
                 value={formattedAmounts[Field.CURRENCY_A]}
                 onUserInput={onFieldAInput}
@@ -577,113 +531,70 @@ export default function AddLiquidity({
                 locked={depositADisabled}
                 hideBalance={false}
               />
-              {/* AC disable entry of 2nd amount b/c swap, not mint */}
             </DynamicSection>
-            {/* <DynamicSection> */}
-            <DynamicSection>
-              {/* <CurrencyInputPanel
-                value={formattedAmounts[Field.CURRENCY_B]}
-                onUserInput={onFieldBInput}
-                onMax={() => {
-                  onFieldBInput(maxAmounts[Field.CURRENCY_B]?.toExact() ?? '')
-                }}
-                showMaxButton={!atMaxAmounts[Field.CURRENCY_B]}
-                currency={currencies[Field.CURRENCY_B] ?? null}
-                id="add-liquidity-input-tokenb"
-                fiatValue={usdcValues[Field.CURRENCY_B]}
-                showCommonBases
-                locked={depositBDisabled}
-                hideBalance={false}
-              /> */}
-              <TYPE.main fontSize="12px" style={{ marginTop: '12px' }}>
-                Minimum Return
-              </TYPE.main>
-              <CurrencyDisplayPanel
-                value={lowValue}
-                fiatValue={usdcValues[Field.CURRENCY_B]}
-                currency={currencies[Field.CURRENCY_B] ?? null}
-                id="add-liquidity-input-tokenb1"
-                locked={depositBDisabled}
-                hideInput={false}
-                hideBalance={true}
-              />
-              <TYPE.main fontSize="12px" style={{ marginTop: '8px' }}>
-                Average Return
-              </TYPE.main>
-              <CurrencyDisplayPanel
-                value={midValue}
-                fiatValue={usdcValues[Field.CURRENCY_B]}
-                currency={currencies[Field.CURRENCY_B] ?? null}
-                id="add-liquidity-input-tokenb2"
-                locked={depositBDisabled}
-                hideInput={false}
-                hideBalance={true}
-              />
-              <TYPE.main fontSize="12px" style={{ marginTop: '8px' }}>
-                Maximum Return
-              </TYPE.main>
-              <CurrencyDisplayPanel
-                value={maxValue}
-                fiatValue={usdcValues[Field.CURRENCY_B]}
-                currency={currencies[Field.CURRENCY_B] ?? null}
-                id="add-liquidity-input-tokenb3"
-                locked={depositBDisabled}
-                hideInput={false}
-                hideBalance={true}
-              />
-              <div style={{ width: '100%', height: '20px' }} />
-            </DynamicSection>
-            {/* </div> */}
-            {/* AC muckery to get single column */}
-
+            {areaAObj?.length > 0 && isSwapActive && (
+              <DynamicSection>
+                <TYPE.main fontSize="12px" style={{ marginTop: '12px' }}>
+                  Minimum Return
+                </TYPE.main>
+                <CurrencyDisplayPanel
+                  value={lowValue}
+                  fiatValue={usdcValues[Field.CURRENCY_B]}
+                  currency={currencies[Field.CURRENCY_B] ?? null}
+                  id="add-liquidity-input-tokenb1"
+                  locked={depositBDisabled}
+                  hideInput={false}
+                  hideBalance={true}
+                />
+                <TYPE.main fontSize="12px" style={{ marginTop: '8px' }}>
+                  Average Return
+                </TYPE.main>
+                <CurrencyDisplayPanel
+                  value={midValue}
+                  fiatValue={usdcValues[Field.CURRENCY_B]}
+                  currency={currencies[Field.CURRENCY_B] ?? null}
+                  id="add-liquidity-input-tokenb2"
+                  locked={depositBDisabled}
+                  hideInput={false}
+                  hideBalance={true}
+                />
+                <TYPE.main fontSize="12px" style={{ marginTop: '8px' }}>
+                  Maximum Return
+                </TYPE.main>
+                <CurrencyDisplayPanel
+                  value={maxValue}
+                  fiatValue={usdcValues[Field.CURRENCY_B]}
+                  currency={currencies[Field.CURRENCY_B] ?? null}
+                  id="add-liquidity-input-tokenb3"
+                  locked={depositBDisabled}
+                  hideInput={false}
+                  hideBalance={true}
+                />
+                <div style={{ width: '100%', height: '20px' }} />
+              </DynamicSection>
+            )}
             {!hasExistingPosition && acShowSetPriceRange ? null : (
               <div>
-                {/* <RowBetween paddingBottom="20px">
-                  <ThemedText.Label>
-                    <Trans>Trade Length</Trans>
-                  </ThemedText.Label>
-                </RowBetween>
-                <div style={{ width: '100%', height: '10px' }} />
-
-                <FeeSelector
-                  disabled={!quoteCurrency || !baseCurrency}
-                  feeAmount={feeAmount}
-                  handleFeePoolSelect={handleFeePoolSelect}
-                  currencyA={baseCurrency ?? undefined}
-                  currencyB={quoteCurrency ?? undefined}
-                /> */}
-
                 <div style={{ width: '100%', height: '20px' }} />
-
                 <SimulateButtons />
               </div>
             )}
-            {/* </ResponsiveTwoColumns> */}
           </Wrapper>
         </PageWrapper>
 
-        {isSwapActive && (
+        {areaAObj?.length > 0 && isSwapActive && (
           <>
             <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
               Swap Graph
             </TYPE.main>
             <PageWrapper wide={!hasExistingPosition}>
               <Wrapper>
-                {/* <LineChart
-                  data={formattedTvlData}
-                  setLabel={setValueLabel}
-                  color={'#2172E5'}
-                  minHeight={340}
-                  setValue={setLatestValue}
-                /> */}
-                {/*value={formattedTvlData ? formatDollarAmount(formattedTvlData[formattedTvlData.length - 1]?.value) : 0}
-              label={valueLabel}*/}
                 <AreaChart dataA={formattedAData} dataB={formattedBData} color={'#2172E5'} minHeight={340} />
               </Wrapper>
             </PageWrapper>
           </>
         )}
-        {isSwapActive && (
+        {areaAObj?.length > 0 && isSwapActive && (
           <>
             <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
               Transactions
