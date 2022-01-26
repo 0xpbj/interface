@@ -585,7 +585,7 @@ export default function AddLiquidity({
         {areaAObj?.length > 0 && isSwapActive && (
           <>
             <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
-              Swap Graph
+              Pool Reserves
             </TYPE.main>
             <PageWrapper wide={!hasExistingPosition}>
               <Wrapper>

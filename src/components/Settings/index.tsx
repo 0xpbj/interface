@@ -122,7 +122,7 @@ export default function SettingsTab({ placeholderSlippage }: { placeholderSlippa
             </Text>
             <TransactionSettings placeholderSlippage={placeholderSlippage} />
             <Text fontWeight={600} fontSize={14}>
-              <Trans>Arbitrage Settings</Trans>
+              <Trans>Simulation Settings</Trans>
             </Text>
             <RowBetween>
               <RowFixed>
