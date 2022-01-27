@@ -33,7 +33,7 @@ import { WRAPPED_NATIVE_CURRENCY } from '../../constants/tokens'
 import { useCurrency } from '../../hooks/Tokens'
 import { useDerivedPositionInfo } from '../../hooks/useDerivedPositionInfo'
 import { useIsSwapUnsupported } from '../../hooks/useIsSwapUnsupported'
-import { _clientSocket, initSimulator, pause, play, reset, testAsClient } from '../../hooks/useSocketClient'
+import { _clientSocket, initSimulator, pause, play, reset, testAsClient, historicQuote } from '../../hooks/useSocketClient'
 import { useUSDCValue } from '../../hooks/useUSDCPrice'
 import { useV3PositionFromTokenId } from '../../hooks/useV3Positions'
 import { useActiveWeb3React } from '../../hooks/web3'
@@ -297,6 +297,10 @@ export default function AddLiquidity({
     setChartObj([])
     setAreaAObj([])
     setAreaBObj([])
+  }
+
+  const getHistoricQuote = async (numIntervals: number, blockInterval: number): Promise<any> => {
+    return await historicQuote(numIntervals, blockInterval)
   }
 
   // useTestAsClient()

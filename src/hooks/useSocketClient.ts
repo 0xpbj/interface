@@ -39,7 +39,7 @@ const runClientCommand = async (clientSocket: Socket | undefined, cmdObj: any, t
   clientSocket.emit('client-command', cmdObj)
   cmdObj.executed = true
 
-  await new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     const timeOut = { ignore: false }
 
     const exitFn = (reason: string) => {
@@ -58,7 +58,7 @@ const runClientCommand = async (clientSocket: Socket | undefined, cmdObj: any, t
 
       if (obj && obj.result && obj.result.id === cmdObj.id) {
         log.debug(`Command ${cmdObj.command} succeeded.`)
-        resolve(null)
+        resolve(obj.result)
       } else {
         reject(
           `Failed to get expected acknowledgement of command ${cmdObj.command}. ` +
@@ -231,4 +231,10 @@ export const reset = async (): Promise<void> => {
   transactionsData = []
   const cmdObj = { id: _cmdId++, command: 'simulation-reset', args: {} }
   await runClientCommand(_clientSocket, cmdObj)
+}
+
+export const historicQuote = async(numIntervals: number, blockInterval: number): Promise<any> => {
+  log.debug('Fetching historic quote:')
+  const cmdObj = { id: _cmdId++, command: 'historic-quote', args: { numIntervals, blockInterval } }
+  return await runClientCommand(_clientSocket, cmdObj)
 }
