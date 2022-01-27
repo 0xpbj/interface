@@ -33,7 +33,15 @@ import { WRAPPED_NATIVE_CURRENCY } from '../../constants/tokens'
 import { useCurrency } from '../../hooks/Tokens'
 import { useDerivedPositionInfo } from '../../hooks/useDerivedPositionInfo'
 import { useIsSwapUnsupported } from '../../hooks/useIsSwapUnsupported'
-import { _clientSocket, initSimulator, pause, play, reset, testAsClient, historicQuote } from '../../hooks/useSocketClient'
+import {
+  _clientSocket,
+  historicQuote,
+  initSimulator,
+  pause,
+  play,
+  reset,
+  testAsClient,
+} from '../../hooks/useSocketClient'
 import { useUSDCValue } from '../../hooks/useUSDCPrice'
 import { useV3PositionFromTokenId } from '../../hooks/useV3Positions'
 import { useActiveWeb3React } from '../../hooks/web3'
@@ -158,6 +166,13 @@ export default function AddLiquidity({
   const [areaAObj, setAreaAObj] = useState<any[]>([])
   const [areaBObj, setAreaBObj] = useState<any[]>([])
 
+  const token0Symbol = currencyIdA !== 'ETH' ? 'USDC' : 'ETH'
+  const token1Symbol = currencyIdA !== 'ETH' ? 'ETH' : 'USDC'
+  const token0Address =
+    currencyIdA !== 'ETH' ? '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' : '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+  const token1Address =
+    currencyIdA !== 'ETH' ? '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' : '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+
   useEffect(() => {
     if (_clientSocket) {
       _clientSocket.on('status', (statusObj) => {
@@ -166,8 +181,32 @@ export default function AddLiquidity({
         if (data) {
           const { blockNumber, reserveA, reserveB, transactions } = data
           for (const tx of transactions) {
-            const { hash, from, to, uxType, gasUsed, nonce } = tx
+            const { hash, from, to, uxType, gasUsed, nonce, events } = tx
             // if (uxType !== TransactionType.EXEC_VIRTUAL) {
+            let amount = 0
+            let amountAIn = 0
+            let amountBIn = 0
+            let amountAOut = 0
+            let amountBOut = 0
+            if (events) {
+              for (const ev of events) {
+                if (ev.amount) {
+                  amount = ev.amount
+                }
+                if (ev.amountAIn) {
+                  amountAIn = ev.amountAIn
+                }
+                if (ev.amountBIn) {
+                  amountBIn = ev.amountBIn
+                }
+                if (ev.amountAOut) {
+                  amountAOut = ev.amountAOut
+                }
+                if (ev.amountBOut) {
+                  amountBOut = ev.amountBOut
+                }
+              }
+            }
             setTxObj((oldArray) => [
               ...oldArray,
               {
@@ -175,13 +214,18 @@ export default function AddLiquidity({
                 hash,
                 timestamp: (blockNumber + nonce / 10000).toString(),
                 sender: from,
-                token0Symbol: 'USDC',
-                token1Symbol: 'ETH',
-                token0Address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-                token1Address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+                token0Symbol,
+                token1Symbol,
+                token0Address,
+                token1Address,
                 amountUSD: gasUsed,
                 amountToken0: reserveA,
                 amountToken1: reserveB,
+                amount,
+                amountAIn,
+                amountBIn,
+                amountAOut,
+                amountBOut,
               },
             ])
             // }
@@ -221,7 +265,7 @@ export default function AddLiquidity({
             },
           ])
           fakeDateMs += BLOCK_TIME_MS
-        } else if (message) {
+        } else if (message && message !== 'Simulation completed.') {
           setInfoObj({
             id: undefined,
             command: message,

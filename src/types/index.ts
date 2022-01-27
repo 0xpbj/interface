@@ -59,6 +59,11 @@ export type LTTransaction = {
   amountUSD: number
   amountToken0: number
   amountToken1: number
+  amount: number
+  amountAIn: number
+  amountBIn: number
+  amountAOut: number
+  amountBOut: number
 }
 
 /**

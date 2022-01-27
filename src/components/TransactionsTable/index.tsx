@@ -1,6 +1,6 @@
+import { formatEther } from '@ethersproject/units'
 import Card from 'components/Card'
 import { AutoColumn } from 'components/Column'
-import HoverInlineText from 'components/HoverInlineText'
 import Loader from 'components/Loader'
 import { RowFixed } from 'components/Row'
 import { Arrow, Break, PageButtons } from 'components/shared'
@@ -11,8 +11,6 @@ import styled from 'styled-components/macro'
 import { ExternalLink, TYPE } from 'theme'
 import { LTTransaction, Transaction, TransactionType } from 'types'
 import { getEtherscanLink, shortenAddress } from 'utils'
-import { formatTime } from 'utils/date'
-import { formatAmount, formatDollarAmount } from 'utils/numbers'
 // import { useActiveNetworkVersion } from 'state/application/hooks'
 // import { OptimismNetworkInfo } from 'constants/networks'
 
@@ -88,29 +86,34 @@ const SORT_FIELD = {
   amountToken1: 'amountToken1',
 }
 
-const DataRow = ({ transaction, color }: { transaction: Transaction; color?: string }) => {
-  const abs0 = Math.abs(transaction.amountToken0)
-  const abs1 = Math.abs(transaction.amountToken1)
-  const outputTokenSymbol = transaction.amountToken0 < 0 ? transaction.token0Symbol : transaction.token1Symbol
-  const inputTokenSymbol = transaction.amountToken1 < 0 ? transaction.token0Symbol : transaction.token1Symbol
+const DataRow = ({ transaction, color }: { transaction: LTTransaction; color?: string }) => {
+  const { amountToken0, amountToken1, token0Symbol, token1Symbol, type, amountAIn, amountBIn, amountAOut, amountBOut } =
+    transaction
+  const abs0 = Math.abs(amountToken0)
+  const abs1 = Math.abs(amountToken1)
+  const outputTokenSymbol = amountToken0 < 0 ? token1Symbol : token0Symbol
+  const inputTokenSymbol = amountToken1 < 0 ? token0Symbol : token1Symbol
   // const [activeNetwork] = useActiveNetworkVersion()
   const activeNetwork = 'mainnet'
   const theme = useTheme()
 
   const operations: any = {
     [TransactionType.SWAP]: `Swap ${inputTokenSymbol} for ${outputTokenSymbol}`,
-    [TransactionType.MINT]: `Add liquidity (${transaction.token0Symbol}, ${transaction.token1Symbol})`,
-    [TransactionType.BURN]: `Remove liquidity (${transaction.token0Symbol}, ${transaction.token1Symbol})`,
+    [TransactionType.MINT]: `Add liquidity (${token0Symbol}, ${token1Symbol})`,
+    [TransactionType.BURN]: `Remove liquidity (${token0Symbol}, ${token1Symbol})`,
     [TransactionType.LTSWAP]: `LT Swap ${inputTokenSymbol} for ${outputTokenSymbol}`,
     [TransactionType.WITHDRAW]: `Withdraw ${outputTokenSymbol}`,
     [TransactionType.EXEC_VIRTUAL]: `Execute virtual order`,
-    [TransactionType.INITIAL_LIQUIDITY]: `Initial liquidity (${transaction.token0Symbol}, ${transaction.token1Symbol})`,
+    [TransactionType.INITIAL_LIQUIDITY]: `Initial liquidity (${token0Symbol}, ${token1Symbol})`,
     [TransactionType.DEPLOY]: `Deploy TWAMM contract`,
     [TransactionType.APPROVE]: `Wallet token approval.`,
     [TransactionType.ARB_SWAP]: `Arbitrage ${inputTokenSymbol} for ${outputTokenSymbol}`,
   }
-  const txnType: any = Number(transaction.type)
+  const txnType: any = Number(type)
   const opLabel = operations.hasOwnProperty(txnType) ? operations[txnType] : 'Unknown operation'
+
+  const label1 = amountAIn ? `${(+formatEther(amountAIn)).toFixed(2)}` : `${(+formatEther(amountAOut)).toFixed(2)}`
+  const label2 = amountBOut ? `${(+formatEther(amountBOut)).toFixed(2)}` : `${(+formatEther(amountBIn)).toFixed(2)}`
 
   return (
     <ResponsiveGrid>
@@ -127,17 +130,17 @@ const DataRow = ({ transaction, color }: { transaction: Transaction; color?: str
         <HoverInlineText text={`${formatAmount(abs1)}  ${transaction.token1Symbol}`} maxCharacters={16} />
       </Label> */}
       <Label end={1} fontWeight={400}>
-        100 ETH {/* TODO */}
+        {label1 !== '0.00' ? label1 : ''}
       </Label>
       <Label end={1} fontWeight={400}>
-        100 USDC {/* TODO */}
+        {label2 !== '0.00' ? label2 : ''}
       </Label>
       <Label end={1} fontWeight={400}>
         <ExternalLink href={getEtherscanLink(1, transaction.sender, 'address')} style={{ color: color ?? theme.blue1 }}>
           {shortenAddress(transaction.sender)}
         </ExternalLink>
       </Label>
-      <Label end={1} fontWeight={400}>
+      <Label end={1} fontWeight={100}>
         {/* {formatTime(transaction.timestamp, 0)} */}
         {Math.floor(parseFloat(transaction.timestamp))}
       </Label>
@@ -262,10 +265,22 @@ export default function TransactionTable({
           <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.amountToken1)}>
             Token Amount {arrow(SORT_FIELD.amountToken1)}
           </ClickableText> */}
-          <ClickableText color={theme.text2} end={1} onClick={() => {return}}>
+          <ClickableText
+            color={theme.text2}
+            end={1}
+            onClick={() => {
+              return
+            }}
+          >
             Sent
           </ClickableText>
-          <ClickableText color={theme.text2} end={1} onClick={() => {return}}>
+          <ClickableText
+            color={theme.text2}
+            end={1}
+            onClick={() => {
+              return
+            }}
+          >
             Received
           </ClickableText>
           <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.sender)}>
