@@ -62,18 +62,32 @@ const AreaChart = ({
   const chartRef = useRef<HTMLDivElement>(null)
   const [chartCreated, setChart] = useState<LightweightCharts.IChartApi | undefined>()
 
-  // const dataPrev = usePrevious(data)
+  const dataPrevA = usePrevious(dataA)
+  const dataPrevB = usePrevious(dataB)
   // PBFS:  This causes mucho flicker--it's sensible for Uni, not for us.
   //        Commented out for now--not sure what side effects it will cause when
   //        we introduce more trades, reset, etc.:
   //
   // reset on new data
-  // useEffect(() => {
-  //   if (dataPrev !== data && chartCreated) {
-  //     chartCreated.resize(0, 0)
-  //     setChart(undefined)
-  //   }
-  // }, [data, dataPrev, chartCreated])
+  useEffect(() => {
+    // console.log(`New Data Effect Called:\n` +
+    //             `- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n`)
+    // if (chartCreated &&
+    //     dataPrevA && dataA &&
+    //     dataPrevB && dataB) {
+    //   console.log(`New Data:\n` +
+    //               `- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n` +
+    //               `  chartCreated=${chartCreated}\n` +
+    //               `  len(dataPrevA)=${dataPrevA.length}\n` +
+    //               `  len(dataA)=${dataA.length}\n` +
+    //               `  len(dataPrevA)=${dataPrevB.length}\n` +
+    //               `  len(dataA)=${dataB.length}\n`)
+    // }
+    // if (dataPrev !== data && chartCreated) {
+    //   chartCreated.resize(0, 0)
+    //   setChart(undefined)
+    // }
+  }, [dataA, dataPrevA, dataB, dataPrevB, chartCreated])
 
   // for reseting value on hover exit
   const currentValue = dataA[dataA.length - 1]?.value
@@ -98,6 +112,8 @@ const AreaChart = ({
 
   // if chart not instantiated in canvas, create it
   useEffect(() => {
+    // console.log(`Chart Creation Effect Called:\n` +
+    //             `- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n`)
     if (!chartCreated && dataA && dataB && !!chartRef?.current?.parentElement) {
       const chart = LightweightCharts.createChart(chartRef.current, {
         height,
@@ -108,13 +124,14 @@ const AreaChart = ({
           fontFamily: 'Inter var',
         },
         rightPriceScale: {
+          visible: true,
           scaleMargins: {
             top: 0.1,
             bottom: 0.1,
           },
           drawTicks: false,
           borderVisible: false,
-          mode: LightweightCharts.PriceScaleMode.Percentage,
+          mode: LightweightCharts.PriceScaleMode.IndexedTo100,
           borderColor: 'rgba(197, 203, 206, 0.4)',
         },
         timeScale: {
@@ -124,12 +141,14 @@ const AreaChart = ({
         },
         watermark: {
           color: 'rgba(0, 0, 0, 0)',
+          text: 'Percentage of initial reserves at simulation start.',
+          visible: true
         },
         grid: {
           horzLines: {
-            // visible: false,
-            style: LightweightCharts.LineStyle.Dotted,
-            color: 'rgba(197, 203, 206, 0.4)',
+            visible: false,
+            // style: LightweightCharts.LineStyle.Dotted,
+            // color: 'rgba(197, 203, 206, 0.4)',
           },
           vertLines: {
             // visible: false,
@@ -143,10 +162,10 @@ const AreaChart = ({
             labelVisible: false,
           },
           vertLine: {
-            visible: true,
-            style: 0,
-            width: 2,
-            color: '#505050',
+            visible: false,
+            // style: 0,
+            // width: 2,
+            // color: '#505050',
             labelVisible: false,
           },
         },
@@ -157,6 +176,8 @@ const AreaChart = ({
   }, [color, chartCreated, currentValue, dataA, dataB, height, setValue, textColor, theme])
 
   useEffect(() => {
+    // console.log(`Chart Create Series Called:\n` +
+    //             `- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n`)
     if (chartCreated && dataA && dataB) {
       // const series = chartCreated.addAreaSeries({
       //   lineColor: color,
@@ -166,17 +187,33 @@ const AreaChart = ({
       //   priceLineVisible: false,
       // })
       // series.setData(data)
-      const areaSeries = chartCreated.addAreaSeries({
-        topColor: 'rgba(67, 83, 254, 0.7)',
-        bottomColor: 'rgba(67, 83, 254, 0.3)',
-        lineColor: 'rgba(67, 83, 254, 1)',
+      // const areaSeries = chartCreated.addAreaSeries({
+      //   topColor: 'rgba(67, 83, 254, 0.7)',
+      //   bottomColor: 'rgba(67, 83, 254, 0.3)',
+      //   lineColor: 'rgba(67, 83, 254, 1)',
+      const areaSeries = chartCreated.addLineSeries({
+        // title: 'USDC',
+        color: 'rgba(67, 83, 254, 1)',
         lineWidth: 2,
+        // If we were using update instead of setvalue, the following
+        // might not be needed:
+        lastPriceAnimation: LightweightCharts.LasPriceAnimationMode.Disabled,
+        lastValueVisible: false,
+        priceLineVisible: false
       })
-      const extraSeries = chartCreated.addAreaSeries({
-        topColor: 'rgba(255, 192, 0, 0.7)',
-        bottomColor: 'rgba(255, 192, 0, 0.3)',
-        lineColor: 'rgba(255, 192, 0, 1)',
+      // const extraSeries = chartCreated.addAreaSeries({
+      //   topColor: 'rgba(255, 192, 0, 0.7)',
+      //   bottomColor: 'rgba(255, 192, 0, 0.3)',
+      //   lineColor: 'rgba(255, 192, 0, 1)',
+      const extraSeries = chartCreated.addLineSeries({
+        // title: 'ETH',
+        color: 'rgba(255, 192, 0, 1)',
         lineWidth: 2,
+        // If we were using update instead of setvalue, the following
+        // might not be needed:
+        lastPriceAnimation: LightweightCharts.LasPriceAnimationMode.Disabled,
+        lastValueVisible: false,
+        priceLineVisible: false
       })
       areaSeries.setData(dataA)
       extraSeries.setData(dataB)

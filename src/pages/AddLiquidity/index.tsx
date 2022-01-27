@@ -452,7 +452,6 @@ export default function AddLiquidity({
     )
   }
 
-  const acForceEnableSwapAmount = true
   const acShowSetPriceRange = false
   const theme = useTheme()
   const priceValue = usdcValues[Field.CURRENCY_A]?.toSignificant(6, { groupSeparator: '' })
@@ -572,7 +571,7 @@ export default function AddLiquidity({
         {areaAObj?.length > 0 && isSwapActive && (
           <>
             <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
-              Pool Reserves
+              Percentage of Pool Reserves from Simulation Start
             </TYPE.main>
             <PageWrapper wide={!hasExistingPosition}>
               <AreaChart dataA={formattedAData} dataB={formattedBData} color={'#2172E5'} minHeight={340} />
