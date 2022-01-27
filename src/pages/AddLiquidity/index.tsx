@@ -26,8 +26,7 @@ import CurrencyDisplayPanel from '../../components/CurrencyDisplayPanel'
 import CurrencyInputPanel from '../../components/CurrencyInputPanel'
 import Loader from '../../components/Loader'
 import { AddRemoveTabs } from '../../components/NavigationTabs'
-import RateToggle from '../../components/RateToggle'
-import Row, { RowBetween } from '../../components/Row'
+import { RowBetween } from '../../components/Row'
 import { SwitchLocaleLink } from '../../components/SwitchLocaleLink'
 import TransactionTable from '../../components/TransactionsTable'
 import { WRAPPED_NATIVE_CURRENCY } from '../../constants/tokens'
@@ -42,7 +41,7 @@ import { Bound, Field } from '../../state/mint/v3/actions'
 import { ThemedText } from '../../theme'
 import { currencyId } from '../../utils/currencyId'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
-import { CurrencyDropdown, DynamicSection, PageWrapper, ScrollablePage, Wrapper } from './styled'
+import { CurrencyDropdown, DynamicSection, PageWrapper, ScrollablePage } from './styled'
 
 const DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE = new Percent(50, 10_000)
 
@@ -51,7 +50,7 @@ const BLOCK_TIME_MS = DAY_MS // 14 seconds -> 1d b/c of bad chart solution for n
 let fakeDateMs = Date.now() - 100 * 365 * DAY_MS // ~100 years ago (each block is a day, gives us ~36500 blocks)
 
 type InfoType = {
-  id: number
+  id: number | undefined
   command: string
   flag: boolean
 }
@@ -189,7 +188,7 @@ export default function AddLiquidity({
           }
           setInfoObj({
             id: blockNumber,
-            command: 'Running simulation ...',
+            command: 'Processing simulation block:',
             flag: true,
           })
           setChartObj((oldArray) => [
@@ -222,6 +221,12 @@ export default function AddLiquidity({
             },
           ])
           fakeDateMs += BLOCK_TIME_MS
+        } else if (message) {
+          setInfoObj({
+            id: undefined,
+            command: message,
+            flag: true,
+          })
         } else {
           setInfoObj({
             id: -1,
@@ -266,8 +271,8 @@ export default function AddLiquidity({
       )}\n`
     )
     // TODO: something more robust than this--this will only work for USDC/ETH hardcoded sim pair
-    const amtA = (currencyIdA !== 'ETH') ? amt : 0
-    const amtB = (currencyIdA !== 'ETH') ? 0 : amt
+    const amtA = currencyIdA !== 'ETH' ? amt : 0
+    const amtB = currencyIdA !== 'ETH' ? 0 : amt
     await play(
       amtA,
       amtB,
@@ -466,98 +471,98 @@ export default function AddLiquidity({
             defaultSlippage={DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE}
             showBackLink={!hasExistingPosition}
           />
-            {infoObj?.flag && (
-              <InfoBox
-                message={<Trans>{`Processing simulation block: ${infoObj?.id}`}</Trans>}
-                icon={<Loader size="40px" stroke={theme.text4} />}
-              />
-            )}
-            {!hasExistingPosition && (
-              <>
-                <div>
-                  <RowBetween paddingBottom="20px">
-                    <ThemedText.Label>
-                      <Trans>Select Pair</Trans>
-                    </ThemedText.Label>
-                  </RowBetween>
-                  <div style={{ width: '100%', height: '10px' }} />
-                  <RowBetween>
-                    <CurrencyDropdown
-                      value={formattedAmounts[Field.CURRENCY_A]}
-                      onUserInput={onFieldAInput}
-                      hideInput={true}
-                      onMax={() => {
-                        onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
-                      }}
-                      onCurrencySelect={handleCurrencyASelect}
-                      showMaxButton={!atMaxAmounts[Field.CURRENCY_A]}
-                      currency={currencies[Field.CURRENCY_A] ?? null}
-                      id="add-liquidity-input-tokena"
-                      showCommonBases
-                    />
-                    <div style={{ width: '12px' }} />
-                    <CurrencyDropdown
-                      value={formattedAmounts[Field.CURRENCY_B]}
-                      hideInput={true}
-                      onUserInput={onFieldBInput}
-                      onCurrencySelect={handleCurrencyBSelect}
-                      onMax={() => {
-                        onFieldBInput(maxAmounts[Field.CURRENCY_B]?.toExact() ?? '')
-                      }}
-                      showMaxButton={!atMaxAmounts[Field.CURRENCY_B]}
-                      currency={currencies[Field.CURRENCY_B] ?? null}
-                      id="add-liquidity-input-tokenb"
-                      showCommonBases
-                    />
-                  </RowBetween>
-                  <div style={{ width: '100%', height: '20px' }} />
-                </div>
-              </>
-            )}
-            <DynamicSection>
-              <ThemedText.Label>
-                {hasExistingPosition ? <Trans>Add more liquidity</Trans> : <Trans>Swap Amount</Trans>}
-              </ThemedText.Label>
-              <div style={{ width: '100%', height: '10px' }} />
-              <CurrencyInputPanel
-                value={formattedAmounts[Field.CURRENCY_A]}
-                onUserInput={onFieldAInput}
-                onMax={() => {
-                  onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
-                }}
-                showMaxButton={!atMaxAmounts[Field.CURRENCY_A]}
-                currency={currencies[Field.CURRENCY_A] ?? null}
-                id="add-liquidity-input-tokena"
-                fiatValue={usdcValues[Field.CURRENCY_A]}
-                showCommonBases
-                locked={depositADisabled}
-                hideBalance={false}
-              />
-            </DynamicSection>
-            {areaAObj?.length > 0 && isSwapActive && (
-              <DynamicSection>
-                <div style={{ width: '100%', height: '20px' }} />
-                <ThemedText.Label>
-                  <Trans>Estimated Return</Trans>
-                </ThemedText.Label>
-                <div style={{ width: '100%', height: '10px' }} />
-                <CurrencyDisplayPanel
-                  value={`Min:  ${lowValue}\t\tMax:  ${maxValue}`}
-                  fiatValue={usdcValues[Field.CURRENCY_B]}
-                  currency={currencies[Field.CURRENCY_B] ?? null}
-                  id="add-liquidity-input-tokenb1"
-                  locked={depositBDisabled}
-                  hideInput={false}
-                  hideBalance={true}
-                />
-              </DynamicSection>
-            )}
-            {!hasExistingPosition && acShowSetPriceRange ? null : (
+          {infoObj?.flag && (
+            <InfoBox
+              message={<Trans>{`${infoObj.command} ${infoObj?.id}`}</Trans>}
+              icon={<Loader size="40px" stroke={theme.text4} />}
+            />
+          )}
+          {!hasExistingPosition && (
+            <>
               <div>
+                <RowBetween paddingBottom="20px">
+                  <ThemedText.Label>
+                    <Trans>Select Pair</Trans>
+                  </ThemedText.Label>
+                </RowBetween>
+                <div style={{ width: '100%', height: '10px' }} />
+                <RowBetween>
+                  <CurrencyDropdown
+                    value={formattedAmounts[Field.CURRENCY_A]}
+                    onUserInput={onFieldAInput}
+                    hideInput={true}
+                    onMax={() => {
+                      onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
+                    }}
+                    onCurrencySelect={handleCurrencyASelect}
+                    showMaxButton={!atMaxAmounts[Field.CURRENCY_A]}
+                    currency={currencies[Field.CURRENCY_A] ?? null}
+                    id="add-liquidity-input-tokena"
+                    showCommonBases
+                  />
+                  <div style={{ width: '12px' }} />
+                  <CurrencyDropdown
+                    value={formattedAmounts[Field.CURRENCY_B]}
+                    hideInput={true}
+                    onUserInput={onFieldBInput}
+                    onCurrencySelect={handleCurrencyBSelect}
+                    onMax={() => {
+                      onFieldBInput(maxAmounts[Field.CURRENCY_B]?.toExact() ?? '')
+                    }}
+                    showMaxButton={!atMaxAmounts[Field.CURRENCY_B]}
+                    currency={currencies[Field.CURRENCY_B] ?? null}
+                    id="add-liquidity-input-tokenb"
+                    showCommonBases
+                  />
+                </RowBetween>
                 <div style={{ width: '100%', height: '20px' }} />
-                <SimulateButtons />
               </div>
-            )}
+            </>
+          )}
+          <DynamicSection>
+            <ThemedText.Label>
+              {hasExistingPosition ? <Trans>Add more liquidity</Trans> : <Trans>Swap Amount</Trans>}
+            </ThemedText.Label>
+            <div style={{ width: '100%', height: '10px' }} />
+            <CurrencyInputPanel
+              value={formattedAmounts[Field.CURRENCY_A]}
+              onUserInput={onFieldAInput}
+              onMax={() => {
+                onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
+              }}
+              showMaxButton={!atMaxAmounts[Field.CURRENCY_A]}
+              currency={currencies[Field.CURRENCY_A] ?? null}
+              id="add-liquidity-input-tokena"
+              fiatValue={usdcValues[Field.CURRENCY_A]}
+              showCommonBases
+              locked={depositADisabled}
+              hideBalance={false}
+            />
+          </DynamicSection>
+          {/* {areaAObj?.length > 0 && isSwapActive && ( */}
+          <DynamicSection>
+            <div style={{ width: '100%', height: '20px' }} />
+            <ThemedText.Label>
+              <Trans>Estimated Return</Trans>
+            </ThemedText.Label>
+            <div style={{ width: '100%', height: '10px' }} />
+            <CurrencyDisplayPanel
+              value={`Min:  ${lowValue}\t\tMax:  ${maxValue}`}
+              fiatValue={usdcValues[Field.CURRENCY_B]}
+              currency={currencies[Field.CURRENCY_B] ?? null}
+              id="add-liquidity-input-tokenb1"
+              locked={depositBDisabled}
+              hideInput={false}
+              hideBalance={true}
+            />
+          </DynamicSection>
+          {/* )} */}
+          {!hasExistingPosition && acShowSetPriceRange ? null : (
+            <div>
+              <div style={{ width: '100%', height: '20px' }} />
+              <SimulateButtons />
+            </div>
+          )}
         </PageWrapper>
 
         {areaAObj?.length > 0 && isSwapActive && (
@@ -566,7 +571,7 @@ export default function AddLiquidity({
               Pool Reserves
             </TYPE.main>
             <PageWrapper wide={!hasExistingPosition}>
-                <AreaChart dataA={formattedAData} dataB={formattedBData} color={'#2172E5'} minHeight={340} />
+              <AreaChart dataA={formattedAData} dataB={formattedBData} color={'#2172E5'} minHeight={340} />
             </PageWrapper>
           </>
         )}
