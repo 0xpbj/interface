@@ -352,13 +352,13 @@ export default function AddLiquidity({
     setChartObj([])
     setAreaAObj([])
     setAreaBObj([])
-    setMinOutput('0')
-    setMaxOutput('0')
+    setMinOutput(0)
+    setMaxOutput(0)
   }
 
 
-  const [minOutput, setMinOutput] = useState<string>('0')
-  const [maxOutput, setMaxOutput] = useState<string>('0')
+  const [minOutput, setMinOutput] = useState<number>(0)
+  const [maxOutput, setMaxOutput] = useState<number>(0)
 
   const getHistoricQuote = async (): Promise<any> => {
     console.log("HISTORICAL QUOTE")
@@ -373,8 +373,8 @@ export default function AddLiquidity({
       const k = usdcReserves * ethReserves
       const ammAmountTokenB = k / (ethReserves + amountIn)
       const amountOutMin = 0.997 * (usdcReserves - ammAmountTokenB)
-      setMaxOutput(amountOutMax.toPrecision(6))
-      setMinOutput(amountOutMin.toPrecision(6))
+      setMaxOutput(numberWithCommas(Math.floor(amountOutMax)))
+      setMinOutput(numberWithCommas(Math.floor(amountOutMin)))
       console.log("MAX", amountOutMax)
       console.log("MIN", amountOutMin)
     } else {
@@ -382,8 +382,8 @@ export default function AddLiquidity({
       const k = usdcReserves * ethReserves
       const ammAmountTokenB = k / (usdcReserves + amountIn)
       const amountOutMin = 0.997 * (ethReserves - ammAmountTokenB)
-      setMaxOutput(amountOutMax.toPrecision(6))
-      setMinOutput(amountOutMin.toPrecision(6))
+      setMaxOutput(numberWithCommas(Math.floor(amountOutMax)))
+      setMinOutput(numberWithCommas(Math.floor(amountOutMin)))
       console.log("MAX", amountOutMax)
       console.log("MIN", amountOutMin)
     }
