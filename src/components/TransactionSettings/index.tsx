@@ -75,7 +75,13 @@ interface TransactionSettingsProps {
   placeholderSlippage: Percent // varies according to the context in which the settings dialog is placed
 }
 
-export default function TransactionSettings({ placeholderSlippage }: TransactionSettingsProps) {
+export default function TransactionSettings({
+  placeholderSlippage,
+  getHistoricQuote,
+}: {
+  placeholderSlippage: Percent
+  getHistoricQuote?: () => Promise<any>
+}) {
   const theme = useContext(ThemeContext)
 
   const userTradeDuration = useUserTradeDuration()
@@ -90,6 +96,7 @@ export default function TransactionSettings({ placeholderSlippage }: Transaction
     } else {
       setUserTradeDuration(parseFloat(value))
     }
+    getHistoricQuote?.()
   }
 
   function parseBlockDelay(value: string) {

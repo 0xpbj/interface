@@ -282,15 +282,13 @@ export default function AddLiquidity({
     }
   }, [])
 
-  const handlePlay = async () => {
-    setSwapActive(true)
+  const getNumberOfIntervalsAndBlockIntervals = () => {
     const amt = parseFloat(formattedAmounts[Field.CURRENCY_A])
     const blockInterval = 10
     let numberOfIntervals = 0
-
     if (userTradeDuration !== 'auto') {
       numberOfIntervals = Math.floor(userTradeDuration / blockInterval)
-    } /* auto */ else {
+    } /* auto */ else if (!isNaN(amt)) {
       //  Auto - algo:
       //  AmountPerBlock = amt / (blockInterval * numberOfIntervals) >> 1
       //  AmountPerBlock = amt / (blockInterval * numberOfIntervals) > 10
@@ -307,6 +305,19 @@ export default function AddLiquidity({
       numberOfIntervals = maxNumberOfIntervals - 1
       console.log(`DEBUG - Auto mode - set numberOfIntervals=${numberOfIntervals}`)
     }
+    return {
+      amt,
+      numberOfIntervals,
+      blockInterval,
+    }
+  }
+
+  const handlePlay = async () => {
+    setSwapActive(true)
+    const { amt, numberOfIntervals, blockInterval } = getNumberOfIntervalsAndBlockIntervals()
+    //PB WILL FIX THIS
+    //has duplicate call to the above information
+    getHistoricQuote()
     console.log(
       `handlePlay:\n  numIntervals=${numberOfIntervals}\n  blockInterval=${blockInterval}\n  mode=${userSlippageTolerance}\n  history=${JSON.stringify(
         history,
@@ -341,10 +352,41 @@ export default function AddLiquidity({
     setChartObj([])
     setAreaAObj([])
     setAreaBObj([])
+    setMinOutput('0')
+    setMaxOutput('0')
   }
 
-  const getHistoricQuote = async (numIntervals: number, blockInterval: number): Promise<any> => {
-    return await historicQuote(numIntervals, blockInterval)
+
+  const [minOutput, setMinOutput] = useState<string>('0')
+  const [maxOutput, setMaxOutput] = useState<string>('0')
+
+  const getHistoricQuote = async (): Promise<any> => {
+    console.log("HISTORICAL QUOTE")
+    const { amt, numberOfIntervals, blockInterval } = getNumberOfIntervalsAndBlockIntervals()
+    const { data } = await historicQuote(numberOfIntervals, blockInterval)
+    const { reserveData } = data
+    const usdcReserves = reserveData.reserveTokenA
+    const ethReserves = reserveData.reserveTokenB
+    const amountIn = parseFloat(formattedAmounts[Field.CURRENCY_A])
+    if (currencyIdA === 'ETH') {
+      const amountOutMax = amountIn * (usdcReserves / ethReserves)
+      const k = usdcReserves * ethReserves
+      const ammAmountTokenB = k / (ethReserves + amountIn)
+      const amountOutMin = 0.997 * (usdcReserves - ammAmountTokenB)
+      setMaxOutput(amountOutMax.toPrecision(6))
+      setMinOutput(amountOutMin.toPrecision(6))
+      console.log("MAX", amountOutMax)
+      console.log("MIN", amountOutMin)
+    } else {
+      const amountOutMax = amountIn * (ethReserves / usdcReserves)
+      const k = usdcReserves * ethReserves
+      const ammAmountTokenB = k / (usdcReserves + amountIn)
+      const amountOutMin = 0.997 * (ethReserves - ammAmountTokenB)
+      setMaxOutput(amountOutMax.toPrecision(6))
+      setMinOutput(amountOutMin.toPrecision(6))
+      console.log("MAX", amountOutMax)
+      console.log("MIN", amountOutMin)
+    }
   }
 
   // useTestAsClient()
@@ -498,14 +540,15 @@ export default function AddLiquidity({
 
   const acShowSetPriceRange = false
   const theme = useTheme()
-  const priceValue = usdcValues[Field.CURRENCY_A]?.toSignificant(6, { groupSeparator: '' })
+  // const priceValue = usdcValues[Field.CURRENCY_A]?.toSignificant(6, { groupSeparator: '' })
+  // console.log('Currency A', formattedAmounts[Field.CURRENCY_A])
   // console.log('ETH PRICE', priceValue)
   // if (priceValue) {
   //   console.log('Parsed ETH Price', parseFloat(priceValue))
   // }
-  const maxValue = priceValue ? numberWithCommas(Number.parseFloat(priceValue).toPrecision(9)) : '0'
-  const lowValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.96).toPrecision(9)) : '0'
-  const midValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.98).toPrecision(9)) : '0'
+  // const maxValue = priceValue ? numberWithCommas(Number.parseFloat(priceValue).toPrecision(9)) : '0'
+  // const lowValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.96).toPrecision(9)) : '0'
+  // const midValue = priceValue ? numberWithCommas((Number.parseFloat(priceValue) * 0.98).toPrecision(9)) : '0'
   return (
     <>
       <ScrollablePage>
@@ -517,6 +560,7 @@ export default function AddLiquidity({
             positionID={tokenId}
             defaultSlippage={DEFAULT_ADD_IN_RANGE_SLIPPAGE_TOLERANCE}
             showBackLink={!hasExistingPosition}
+            getHistoricQuote={getHistoricQuote}
           />
           {infoObj?.flag && (
             <InfoBox
@@ -583,7 +627,7 @@ export default function AddLiquidity({
               fiatValue={usdcValues[Field.CURRENCY_A]}
               showCommonBases
               locked={depositADisabled}
-              hideBalance={false}
+              hideBalance={true}
             />
           </DynamicSection>
           {/* {areaAObj?.length > 0 && isSwapActive && ( */}
@@ -594,7 +638,7 @@ export default function AddLiquidity({
             </ThemedText.Label>
             <div style={{ width: '100%', height: '10px' }} />
             <CurrencyDisplayPanel
-              value={`Min:  ${lowValue}\t\tMax:  ${maxValue}`}
+              value={`Min:  ${minOutput}\t\tMax:  ${maxOutput}`}
               fiatValue={usdcValues[Field.CURRENCY_B]}
               currency={currencies[Field.CURRENCY_B] ?? null}
               id="add-liquidity-input-tokenb1"

@@ -94,6 +94,10 @@ export function FindPoolTabs({ origin }: { origin: string }) {
   )
 }
 
+const exampleFunction = () => {
+  console.log("RANDOM CONSOLE EXAMPLE")
+}
+
 export function AddRemoveTabs({
   adding,
   creating,
@@ -101,6 +105,7 @@ export function AddRemoveTabs({
   positionID,
   children,
   longterm,
+  getHistoricQuote,
 }: {
   adding: boolean
   creating: boolean
@@ -109,6 +114,7 @@ export function AddRemoveTabs({
   showBackLink?: boolean
   children?: ReactNode | undefined
   longterm?: boolean | undefined
+  getHistoricQuote?: () => Promise<any>
 }) {
   const theme = useTheme()
   // reset states on back
@@ -119,6 +125,11 @@ export function AddRemoveTabs({
   const poolLink = location.pathname.includes('add/v2')
     ? '/pool/v2'
     : '/pool' + (!!positionID ? `/${positionID.toString()}` : '')
+
+  const propsObject = {
+    placeholderSlippage: defaultSlippage,
+    getHistoricQuote,
+  }
 
   return (
     <Tabs>
@@ -152,7 +163,7 @@ export function AddRemoveTabs({
           )}
         </ThemedText.MediumHeader>
         <Box style={{ marginRight: '.5rem' }}>{children}</Box>
-        <SettingsTab placeholderSlippage={defaultSlippage} />
+        <SettingsTab {...propsObject} />
       </RowBetween>
     </Tabs>
   )

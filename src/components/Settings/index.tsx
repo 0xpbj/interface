@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import { t, Trans } from '@lingui/macro'
 import { Percent } from '@uniswap/sdk-core'
-import { useContext, useRef, useState } from 'react'
+import { useContext, useRef } from 'react'
 import { Settings, X } from 'react-feather'
 import { Text } from 'rebass'
 import styled, { ThemeContext } from 'styled-components/macro'
@@ -9,11 +9,7 @@ import styled, { ThemeContext } from 'styled-components/macro'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { useModalOpen, useToggleSettingsMenu } from '../../state/application/hooks'
 import { ApplicationModal } from '../../state/application/reducer'
-import {
-  useMarketData,
-  useMarketReserves,
-  useSimulateArbitrage,
-} from '../../state/user/hooks'
+import { useMarketData, useMarketReserves, useSimulateArbitrage } from '../../state/user/hooks'
 import { ThemedText } from '../../theme'
 import { AutoColumn } from '../Column'
 import QuestionHelper from '../QuestionHelper'
@@ -96,7 +92,13 @@ const MenuFlyout = styled.span`
   user-select: none;
 `
 
-export default function SettingsTab({ placeholderSlippage }: { placeholderSlippage: Percent }) {
+export default function SettingsTab({
+  placeholderSlippage,
+  getHistoricQuote,
+}: {
+  placeholderSlippage: Percent
+  getHistoricQuote?: () => Promise<any>
+}) {
   const node = useRef<HTMLDivElement>()
   const open = useModalOpen(ApplicationModal.SETTINGS)
   const toggle = useToggleSettingsMenu()
@@ -109,6 +111,11 @@ export default function SettingsTab({ placeholderSlippage }: { placeholderSlippa
 
   useOnClickOutside(node, open ? toggle : undefined)
 
+  const propsObject = {
+    placeholderSlippage,
+    getHistoricQuote,
+  }
+
   return (
     <StyledMenu ref={node as any}>
       <StyledMenuButton onClick={toggle} id="open-settings-dialog-button" aria-label={t`Transaction Settings`}>
@@ -120,7 +127,7 @@ export default function SettingsTab({ placeholderSlippage }: { placeholderSlippa
             <Text fontWeight={600} fontSize={14}>
               <Trans>Trade Settings</Trans>
             </Text>
-            <TransactionSettings placeholderSlippage={placeholderSlippage} />
+            <TransactionSettings {...propsObject} />
             <Text fontWeight={600} fontSize={14}>
               <Trans>Simulation Settings</Trans>
             </Text>
