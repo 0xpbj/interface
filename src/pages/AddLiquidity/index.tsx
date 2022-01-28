@@ -353,6 +353,7 @@ export default function AddLiquidity({
     setAreaBObj([])
     setMinOutput(ZERO)
     setMaxOutput(ZERO)
+    setInfoMsg('')
   }
 
   const [minOutput, setMinOutput] = useState<string>(ZERO)
