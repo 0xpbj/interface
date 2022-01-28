@@ -1,17 +1,10 @@
 import { RowBetween } from 'components/Row'
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import usePrevious from 'hooks/usePrevious'
-import useTheme from 'hooks/useTheme'
-// import { createChart, IChartApi } from 'lightweight-charts'
 import * as LightweightCharts from 'lightweight-charts'
-import { darken } from 'polished'
+import useTheme from 'hooks/useTheme'
 import React, { Dispatch, ReactNode, SetStateAction, useCallback, useEffect, useRef, useState } from 'react'
 import styled from 'styled-components/macro'
-import { formatDollarAmount } from 'utils/numbers'
 
 import Card from '../Card'
-dayjs.extend(utc)
 
 const Wrapper = styled(Card)`
   width: 100%;
@@ -23,7 +16,6 @@ const Wrapper = styled(Card)`
     font-size: 1rem;
   }
 `
-
 const DEFAULT_HEIGHT = 300
 
 export type AreaChartProps = {
@@ -32,8 +24,6 @@ export type AreaChartProps = {
   color?: string | undefined
   height?: number | undefined
   minHeight?: number
-  setValue?: Dispatch<SetStateAction<number | undefined>> // used for value on hover
-  setLabel?: Dispatch<SetStateAction<string | undefined>> // used for label value
   topLeft?: ReactNode | undefined
   topRight?: ReactNode | undefined
   bottomLeft?: ReactNode | undefined
@@ -44,8 +34,6 @@ const AreaChart = ({
   dataA,
   dataB,
   color = '#56B2A4',
-  setValue,
-  setLabel,
   topLeft,
   topRight,
   bottomLeft,
@@ -60,61 +48,33 @@ const AreaChart = ({
 
   // chart pointer
   const chartRef = useRef<HTMLDivElement>(null)
-  const [chartCreated, setChart] = useState<LightweightCharts.IChartApi | undefined>()
-
-  const dataPrevA = usePrevious(dataA)
-  const dataPrevB = usePrevious(dataB)
-  // PBFS:  This causes mucho flicker--it's sensible for Uni, not for us.
-  //        Commented out for now--not sure what side effects it will cause when
-  //        we introduce more trades, reset, etc.:
-  //
-  // reset on new data
-  useEffect(() => {
-    // console.log(`New Data Effect Called:\n` +
-    //             `- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n`)
-    // if (chartCreated &&
-    //     dataPrevA && dataA &&
-    //     dataPrevB && dataB) {
-    //   console.log(`New Data:\n` +
-    //               `- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n` +
-    //               `  chartCreated=${chartCreated}\n` +
-    //               `  len(dataPrevA)=${dataPrevA.length}\n` +
-    //               `  len(dataA)=${dataA.length}\n` +
-    //               `  len(dataPrevA)=${dataPrevB.length}\n` +
-    //               `  len(dataA)=${dataB.length}\n`)
-    // }
-    // if (dataPrev !== data && chartCreated) {
-    //   chartCreated.resize(0, 0)
-    //   setChart(undefined)
-    // }
-  }, [dataA, dataPrevA, dataB, dataPrevB, chartCreated])
-
-  // for reseting value on hover exit
-  const currentValue = dataA[dataA.length - 1]?.value
+  const [chartObj, setChartObj] = useState<LightweightCharts.IChartApi | undefined>()
 
   const handleResize = useCallback(() => {
-    if (chartCreated && chartRef?.current?.parentElement) {
-      chartCreated.resize(chartRef.current.parentElement.clientWidth - 32, height)
-      chartCreated.timeScale().fitContent()
-      chartCreated.timeScale().scrollToPosition(0, false)
+    if (chartObj && chartRef?.current?.parentElement) {
+      chartObj.resize(chartRef.current.parentElement.clientWidth - 32, height)
+      chartObj.timeScale().fitContent()
+      chartObj.timeScale().scrollToPosition(0, false)
     }
-  }, [chartCreated, chartRef, height])
+  }, [chartObj, chartRef, height])
 
   // add event listener for resize
   const isClient = typeof window === 'object'
   useEffect(() => {
+    // console.log(`Chart add resize event listener called:\n` +
+    //             `- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n`)
     if (!isClient) {
       return
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [isClient, chartRef, handleResize]) // Empty array ensures that effect is only run on mount and unmount
+  }, [isClient, chartRef, handleResize]) 
 
   // if chart not instantiated in canvas, create it
   useEffect(() => {
     // console.log(`Chart Creation Effect Called:\n` +
     //             `- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n`)
-    if (!chartCreated && dataA && dataB && !!chartRef?.current?.parentElement) {
+    if (!chartObj && !!chartRef?.current?.parentElement) {
       const chart = LightweightCharts.createChart(chartRef.current, {
         height,
         width: chartRef.current.parentElement.clientWidth - 32,
@@ -171,27 +131,22 @@ const AreaChart = ({
         },
       })
       chart.timeScale().fitContent()
-      setChart(chart)
+      setChartObj(chart)
     }
-  }, [color, chartCreated, currentValue, dataA, dataB, height, setValue, textColor, theme])
+  }, [chartObj, color, height, textColor, theme])
+  // }, [color, chartObj, dataA, dataB, height, textColor, theme])
+
+  const [sDataA, setSDataA] = useState<any[]>([])
+  const [sDataB, setSDataB] = useState<any[]>([])
+  const [seriesA, setSeriesA] = useState<LightweightCharts.ISeriesApi<"Line"> | undefined>(undefined)
+  const [seriesB, setSeriesB] = useState<LightweightCharts.ISeriesApi<"Line"> | undefined>(undefined)
 
   useEffect(() => {
     // console.log(`Chart Create Series Called:\n` +
     //             `- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n`)
-    if (chartCreated && dataA && dataB) {
-      // const series = chartCreated.addAreaSeries({
-      //   lineColor: color,
-      //   topColor: darken(0.36, color),
-      //   bottomColor: theme.bg0,
-      //   lineWidth: 2,
-      //   priceLineVisible: false,
-      // })
-      // series.setData(data)
-      // const areaSeries = chartCreated.addAreaSeries({
-      //   topColor: 'rgba(67, 83, 254, 0.7)',
-      //   bottomColor: 'rgba(67, 83, 254, 0.3)',
-      //   lineColor: 'rgba(67, 83, 254, 1)',
-      const areaSeries = chartCreated.addLineSeries({
+    if (chartObj && dataA && dataB && !seriesA && !seriesB) {
+      // console.log(`Adding line series`)
+      const _seriesA = chartObj.addLineSeries({
         // title: 'USDC',
         color: 'rgba(67, 83, 254, 1)',
         lineWidth: 2,
@@ -201,11 +156,8 @@ const AreaChart = ({
         lastValueVisible: false,
         priceLineVisible: false
       })
-      // const extraSeries = chartCreated.addAreaSeries({
-      //   topColor: 'rgba(255, 192, 0, 0.7)',
-      //   bottomColor: 'rgba(255, 192, 0, 0.3)',
-      //   lineColor: 'rgba(255, 192, 0, 1)',
-      const extraSeries = chartCreated.addLineSeries({
+
+      const _seriesB = chartObj.addLineSeries({
         // title: 'ETH',
         color: 'rgba(255, 192, 0, 1)',
         lineWidth: 2,
@@ -215,50 +167,52 @@ const AreaChart = ({
         lastValueVisible: false,
         priceLineVisible: false
       })
-      areaSeries.setData(dataA)
-      extraSeries.setData(dataB)
-      chartCreated.timeScale().fitContent()
-      chartCreated.timeScale().scrollToRealTime()
+      _seriesA.setData(dataA)
+      _seriesB.setData(dataB)
+      setSeriesA(_seriesA)
+      setSeriesB(_seriesB)
+      chartObj.timeScale().fitContent()
+      chartObj.timeScale().scrollToRealTime()
+      setSDataA(dataA)
+      setSDataB(dataB)
+    } else if (chartObj && seriesA && seriesB) {
+      // console.log(`Updating data in a line series:\n` +
+      //             `  dataA:  received=${dataA.length},  state=${sDataA.length}\n` +
+      //             `  dataB:  received=${dataB.length},  state=${sDataB.length}\n`)
 
-      // areaSeries.applyOptions({
-      //   priceFormat: {
-      //     type: 'custom',
-      //     minMove: 0.02,
-      //     formatter: (price: any) => formatDollarAmount(price),
-      //   },
-      // })
+      // For some reason react is passing these arrays in at different lengths resulting
+      // in more updates than needed, so skip the update until the amount passed in is
+      // the same (it's happening b/c of the way state is getting used in the parent component
+      // if these were a single object it would update simultaneously)
+      if (dataA.length === dataB.length) {
+        let changed = false
 
-      // extraSeries.applyOptions({
-      //   priceFormat: {
-      //     type: 'custom',
-      //     minMove: 0.02,
-      //     formatter: (price: any) => formatDollarAmount(price),
-      //   },
-      // })
+        if (dataA.length !== sDataA.length) {
+          changed = true
+          for (let idx = sDataA.length - 1; idx < dataA.length; idx++) {
+            seriesA.update(dataA[idx])
+          }
+          setSeriesA(seriesA)
+          setSDataA(dataA)
+        }
 
-      // update the title when hovering on the chart
-      // chartCreated.subscribeCrosshairMove(function (param) {
-      //   if (
-      //     chartRef?.current &&
-      //     (param === undefined ||
-      //       param.time === undefined ||
-      //       (param && param.point && param.point.x < 0) ||
-      //       (param && param.point && param.point.x > chartRef.current.clientWidth) ||
-      //       (param && param.point && param.point.y < 0) ||
-      //       (param && param.point && param.point.y > height))
-      //   ) {
-      //     setValue && setValue(undefined)
-      //     setLabel && setLabel(undefined)
-      //   } else if (areaSeries && param) {
-      //     const price = parseFloat(param?.seriesPrices?.get(areaSeries)?.toString() ?? currentValue)
-      //     const time = param?.time as { day: number; year: number; month: number }
-      //     const timeString = dayjs(time.year + '-' + time.month + '-' + time.day).format('MMM D, YYYY')
-      //     setValue && setValue(price)
-      //     setLabel && timeString && setLabel(timeString)
-      //   }
-      // })
+        if (dataB.length !== sDataB.length) {
+          changed = true
+          for (let idx = sDataB.length - 1; idx < dataB.length; idx++) {
+            seriesB.update(dataB[idx])
+          }
+          setSeriesB(seriesB)
+          setSDataB(dataB)
+        }
+
+        if (changed) {
+          chartObj.timeScale().fitContent()
+          chartObj.timeScale().scrollToRealTime()
+        }
+      }
     }
-  }, [chartCreated, color, currentValue, dataA, dataB, height, setLabel, setValue, theme.bg0])
+  }, [chartObj, dataA, dataB])
+  // }, [chartObj, color, dataA, dataB, height, theme.bg0])
 
   return (
     <Wrapper minHeight={minHeight}>

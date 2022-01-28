@@ -63,22 +63,28 @@ type InfoType = {
   flag: boolean
 }
 
-function numberWithCommas(x: any) {
-  return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ',')
+function numberWithCommas(x: number): string {
+  return new Intl.NumberFormat('en-GB', {style: 'decimal', maximumFractionDigits: 3 }) .format(x)
 }
 
 function InfoBox({ message, icon }: { message?: ReactNode; icon: ReactNode }) {
   return (
-    <ColumnCenter style={{ height: '100%', justifyContent: 'center' }}>
-      {icon}
-      {message && (
-        <ThemedText.MediumHeader padding={10} marginTop="20px" textAlign="center">
-          {message}
-        </ThemedText.MediumHeader>
-      )}
+    <ColumnCenter style={{ height: '100%', justifyContent: 'center', marginTop: 20, marginBottom: 20 }}>
+      <RowBetween style={{ height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+        <span style={{ height: '100%', flex: 1 }} />
+        {message && (
+          <ThemedText.MediumHeader padding={10} textAlign="center">
+            {message}
+          </ThemedText.MediumHeader>
+        )}
+        {icon}
+        <span style={{ height: '100%', flex: 1 }} />
+      </RowBetween>
     </ColumnCenter>
   )
 }
+
+let hqRunning = false
 
 export default function AddLiquidity({
   match: {
@@ -162,7 +168,6 @@ export default function AddLiquidity({
 
   const [infoObj, setInfoObj] = useState<InfoType | undefined>()
   const [txObj, setTxObj] = useState<LTTransaction[]>([])
-  const [chartObj, setChartObj] = useState<any[]>([])
   const [areaAObj, setAreaAObj] = useState<any[]>([])
   const [areaBObj, setAreaBObj] = useState<any[]>([])
 
@@ -235,21 +240,6 @@ export default function AddLiquidity({
             command: 'Processing simulation block:',
             flag: true,
           })
-          setChartObj((oldArray) => [
-            ...oldArray,
-            {
-              // PBFS:  This chart component is not the right tool for the job. Find
-              //        one that handles updates better and scrolling.
-              //        Until then, I've mapped each block to a day and we start the chart
-              //        at 100 years ago to give us ~36k blocks.
-              //        time below represents a block, value represents reserveA
-              //        Another thing we'd want to do is draw a second series on this chart.
-              //        It's a great component (https://github.com/tradingview/lightweight-charts),
-              //        just not for what we're trying to do.
-              time: timestampToYYYYMMDD(fakeDateMs),
-              value: reserveA,
-            },
-          ])
           setAreaAObj((oldArray) => [
             ...oldArray,
             {
@@ -265,7 +255,8 @@ export default function AddLiquidity({
             },
           ])
           fakeDateMs += BLOCK_TIME_MS
-        } else if (message && message !== 'Simulation completed.') {
+        // } else if (message && message !== 'Simulation completed.') {
+        } else if (message) {
           setInfoObj({
             id: undefined,
             command: message,
@@ -284,23 +275,24 @@ export default function AddLiquidity({
 
   const getNumberOfIntervalsAndBlockIntervals = () => {
     const amt = parseFloat(formattedAmounts[Field.CURRENCY_A])
+    const amtScale = amt * 10 ** 18
     const blockInterval = 10
     let numberOfIntervals = 0
     if (userTradeDuration !== 'auto') {
       numberOfIntervals = Math.floor(userTradeDuration / blockInterval)
-    } /* auto */ else if (!isNaN(amt)) {
+    } /* auto */ else if (!isNaN(amtScale)) {
       //  Auto - algo:
-      //  AmountPerBlock = amt / (blockInterval * numberOfIntervals) >> 1
-      //  AmountPerBlock = amt / (blockInterval * numberOfIntervals) > 10
-      //  amt / (blockInterval * 10) > numberOfIntervals
-      const maxNumberOfIntervals = Math.floor(amt / (blockInterval * 10))
+      //  AmountPerBlock = amtScale / (blockInterval * numberOfIntervals) >> 1
+      //  AmountPerBlock = amtScale / (blockInterval * numberOfIntervals) > 10
+      //  amtScale / (blockInterval * 10) > numberOfIntervals
+      const maxNumberOfIntervals = Math.floor(amtScale / (blockInterval * 10))
       if (isNaN(maxNumberOfIntervals)) {
         throw new Error(
-          `Specify an amount to automatically compute the length of a long term trade (${amt} tokens specified).`
+          `Specify an amount to automatically compute the length of a long term trade (${amt} tokens specified - ${amtScale} scaled).`
         )
       }
       if (maxNumberOfIntervals < 5) {
-        throw new Error(`Insufficient amount to justify long term trade (${amt} tokens). Add more tokens ...`)
+        throw new Error(`Insufficient amount to justify long term trade (${amt} tokens - ${amtScale} scaled). Add more tokens ...`)
       }
       numberOfIntervals = maxNumberOfIntervals - 1
       console.log(`DEBUG - Auto mode - set numberOfIntervals=${numberOfIntervals}`)
@@ -335,8 +327,8 @@ export default function AddLiquidity({
       blockInterval,
       Number(blockDelay),
       simulateArbitrage,
-      marketData,
-      marketReserves
+      marketReserves,
+      marketData
     )
   }
 
@@ -344,49 +336,59 @@ export default function AddLiquidity({
     await pause()
   }
 
+  const ZERO = numberWithCommas(0)
   const handleReset = async () => {
     await reset()
     setSwapActive(false)
     setInfoObj(undefined)
     setTxObj([])
-    setChartObj([])
     setAreaAObj([])
     setAreaBObj([])
-    setMinOutput(0)
-    setMaxOutput(0)
+    setMinOutput(ZERO)
+    setMaxOutput(ZERO)
   }
 
 
-  const [minOutput, setMinOutput] = useState<number>(0)
-  const [maxOutput, setMaxOutput] = useState<number>(0)
+  const [minOutput, setMinOutput] = useState<string>(ZERO)
+  const [maxOutput, setMaxOutput] = useState<string>(ZERO)
 
-  const getHistoricQuote = async (): Promise<any> => {
-    console.log("HISTORICAL QUOTE")
-    const { amt, numberOfIntervals, blockInterval } = getNumberOfIntervalsAndBlockIntervals()
-    const { data } = await historicQuote(numberOfIntervals, blockInterval)
-    const { reserveData } = data
-    const usdcReserves = reserveData.reserveTokenA
-    const ethReserves = reserveData.reserveTokenB
-    const amountIn = parseFloat(formattedAmounts[Field.CURRENCY_A])
-    if (currencyIdA === 'ETH') {
-      const amountOutMax = amountIn * (usdcReserves / ethReserves)
-      const k = usdcReserves * ethReserves
-      const ammAmountTokenB = k / (ethReserves + amountIn)
-      const amountOutMin = 0.997 * (usdcReserves - ammAmountTokenB)
-      setMaxOutput(numberWithCommas(Math.floor(amountOutMax)))
-      setMinOutput(numberWithCommas(Math.floor(amountOutMin)))
-      console.log("MAX", amountOutMax)
-      console.log("MIN", amountOutMin)
-    } else {
-      const amountOutMax = amountIn * (ethReserves / usdcReserves)
-      const k = usdcReserves * ethReserves
-      const ammAmountTokenB = k / (usdcReserves + amountIn)
-      const amountOutMin = 0.997 * (ethReserves - ammAmountTokenB)
-      setMaxOutput(numberWithCommas(Math.floor(amountOutMax)))
-      setMinOutput(numberWithCommas(Math.floor(amountOutMin)))
-      console.log("MAX", amountOutMax)
-      console.log("MIN", amountOutMin)
-    }
+  const getHistoricQuote = async (): Promise<void> => {
+    /* Only one issuance of this command can be running at once--we don't presently
+       have command queueing and calling it multiple times messes up the sequence of 
+       values returned (it's a simple sequential handshake).
+       If it's already running we just do nothing. */
+    // if (!hqRunning) {
+    //   hqRunning = true
+
+      console.log("HISTORICAL QUOTE")
+      const { amt, numberOfIntervals, blockInterval } = getNumberOfIntervalsAndBlockIntervals()
+      const { data } = await historicQuote(numberOfIntervals, blockInterval)
+      const { reserveData } = data
+      const usdcReserves = reserveData.reserveTokenA
+      const ethReserves = reserveData.reserveTokenB
+      const amountIn = parseFloat(formattedAmounts[Field.CURRENCY_A])
+      if (currencyIdA === 'ETH') {
+        const amountOutMax = amountIn * (usdcReserves / ethReserves)
+        const k = usdcReserves * ethReserves
+        const ammAmountTokenB = k / (ethReserves + amountIn)
+        const amountOutMin = 0.997 * (usdcReserves - ammAmountTokenB)
+        setMaxOutput(numberWithCommas(amountOutMax))
+        setMinOutput(numberWithCommas(amountOutMin))
+        console.log("MAX", amountOutMax)
+        console.log("MIN", amountOutMin)
+      } else {
+        const amountOutMax = amountIn * (ethReserves / usdcReserves)
+        const k = usdcReserves * ethReserves
+        const ammAmountTokenB = k / (usdcReserves + amountIn)
+        const amountOutMin = 0.997 * (ethReserves - ammAmountTokenB)
+        setMaxOutput(numberWithCommas(amountOutMax))
+        setMinOutput(numberWithCommas(amountOutMin))
+        console.log("MAX", amountOutMax)
+        console.log("MIN", amountOutMin)
+      }
+
+      hqRunning = false
+    // }
   }
 
   // useTestAsClient()
@@ -481,14 +483,6 @@ export default function AddLiquidity({
 
   const addIsUnsupported = useIsSwapUnsupported(currencies?.CURRENCY_A, currencies?.CURRENCY_B)
 
-  const formattedTvlData = useMemo(() => {
-    if (chartObj) {
-      return [...chartObj] // PBFS:  Shallow copy (otherwise charting code doesn't work)
-    } else {
-      return []
-    }
-  }, [chartObj])
-
   const formattedAData = useMemo(() => {
     if (areaAObj) {
       return [...areaAObj] // PBFS:  Shallow copy (otherwise charting code doesn't work)
@@ -565,7 +559,7 @@ export default function AddLiquidity({
           {infoObj?.flag && (
             <InfoBox
               message={<Trans>{`${infoObj.command} ${infoObj?.id}`}</Trans>}
-              icon={<Loader size="40px" stroke={theme.text4} />}
+              icon={ (infoObj.command === 'Simulation completed.') ? undefined : <Loader size="30px" stroke={theme.text4} />}
             />
           )}
           {!hasExistingPosition && (
@@ -630,7 +624,6 @@ export default function AddLiquidity({
               hideBalance={true}
             />
           </DynamicSection>
-          {/* {areaAObj?.length > 0 && isSwapActive && ( */}
           <DynamicSection>
             <div style={{ width: '100%', height: '20px' }} />
             <ThemedText.Label>
@@ -647,7 +640,6 @@ export default function AddLiquidity({
               hideBalance={true}
             />
           </DynamicSection>
-          {/* )} */}
           {!hasExistingPosition && acShowSetPriceRange ? null : (
             <div>
               <div style={{ width: '100%', height: '20px' }} />
@@ -664,10 +656,7 @@ export default function AddLiquidity({
             <PageWrapper wide={!hasExistingPosition}>
               <AreaChart dataA={formattedAData} dataB={formattedBData} color={'#2172E5'} minHeight={340} />
             </PageWrapper>
-          </>
-        )}
-        {areaAObj?.length > 0 && isSwapActive && (
-          <>
+
             <TYPE.main fontSize="24px" style={{ marginTop: '24px' }}>
               Transactions
             </TYPE.main>

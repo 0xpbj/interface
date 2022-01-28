@@ -1,3 +1,4 @@
+import { resolve } from 'path'
 import { io, Socket } from 'socket.io-client'
 
 import * as ds from '../utils/debugScopes'
@@ -20,7 +21,12 @@ const delayMs = async (delayInMs = 250) => {
     }, delayInMs)
   })
 }
-const runClientCommand = async (clientSocket: Socket | undefined, cmdObj: any, timeOutMs = 10000) => {
+
+let _runningClientCommand = false
+const _commandQueue: any[] = []
+const _resultQueue: any[] = []
+
+const runClientCommand = async (clientSocket: Socket | undefined, cmdObj: any, timeOutMs = 15000, timeOutIterationMs = 250) => {
   if (!clientSocket) {
     log.error(
       'No connection to server. Socket undefined. ' + 'Unable to run command:\n' + JSON.stringify(cmdObj, null, 2)
@@ -36,51 +42,106 @@ const runClientCommand = async (clientSocket: Socket | undefined, cmdObj: any, t
     return
   }
 
-  clientSocket.emit('client-command', cmdObj)
-  cmdObj.executed = true
+  // Run the client command and then monitor the results queue for the expected result to our command.
+  // When we receive it, resolve this request.
+  _commandQueue.push(cmdObj)
+  if (!_runningClientCommand) {
+    _runClientCommand(clientSocket, timeOutMs)
+  }
 
-  return await new Promise((resolve, reject) => {
-    const timeOut = { ignore: false }
-
-    const exitFn = (reason: string) => {
-      timeOut.ignore = true
-      reject(
-        `runCommand failed eth node server connection, while running:\n` +
-          JSON.stringify(cmdObj, null, 2) +
-          `\nbecause: ${reason}.\n`
-      )
+  // Monitor and resolve when our result comes in or when we timeout:
+  //
+  const maxIterations = timeOutMs / timeOutIterationMs
+  let iteration = 0
+  while (iteration < maxIterations) {
+    let resultIndex = 0
+    for (const result of _resultQueue) {
+      if (result.id === cmdObj.id) {
+        // Remove this result from the queue and resolve the promise.
+        const splicedElements = _resultQueue.splice(resultIndex, 1)
+        return splicedElements[0]
+      }
+      resultIndex++
     }
-    clientSocket.once('disconnect', exitFn)
 
-    clientSocket.once('result', (obj: any) => {
-      timeOut.ignore = true
-      clientSocket.removeListener('disconnect', exitFn)
+    iteration++
+    await delayMs(timeOutIterationMs)
+  }
 
-      if (obj && obj.result && obj.result.id === cmdObj.id) {
-        log.debug(`Command ${cmdObj.command} succeeded.`)
-        resolve(obj.result)
-      } else {
-        reject(
-          `Failed to get expected acknowledgement of command ${cmdObj.command}. ` +
-            `Expected command id ${cmdObj.id}, received response: ` +
-            `${JSON.stringify(obj, null, 2)}`
-        )
-      }
-    })
+  cmdObj.timeOut = true
+  return cmdObj
+}
 
-    // Time-out logic.  Issue a warning, clear the listener and resolve this promise:
-    //
-    setTimeout(() => {
-      if (!timeOut.ignore) {
-        clientSocket.removeAllListeners('result')
-        clientSocket.removeListener('disconnect', exitFn)
-        reject(
-          `runClientCommand timed out after ${timeOutMs / 1000} seconds, while running:\n` +
-            JSON.stringify(cmdObj, null, 2)
-        )
-      }
-    }, timeOutMs)
-  })
+const _runClientCommand = async (clientSocket: Socket, timeOutMs = 15000): Promise<void> => {
+  if (_runningClientCommand) {
+    return
+  }
+  _runningClientCommand = true
+
+  while (_commandQueue.length > 0) {
+    // log.debug(`_runClientCommand:\n` +
+    //           `  running ${_commandQueue.length} commands\n` +
+    //           `  results ${_resultQueue.length} results available\n` +
+    //           `  running: ${_runningClientCommand}\n` +
+    //           `  commandQueue:\n${JSON.stringify(_commandQueue, null, 2)}\n` +
+    //           `  resultQueue:\n${JSON.stringify(_resultQueue, null, 2)}`);
+
+    const cmdObj: any = _commandQueue.shift()
+
+    clientSocket.emit('client-command', cmdObj)
+    cmdObj.executed = true
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const timeOut = { ignore: false }
+
+        const exitFn = (reason: string) => {
+          timeOut.ignore = true
+          reject(
+            `runCommand failed eth node server connection, while running:\n` +
+              JSON.stringify(cmdObj, null, 2) +
+              `\nbecause: ${reason}.\n`
+          )
+        }
+        clientSocket.once('disconnect', exitFn)
+
+        clientSocket.once('result', (obj: any) => {
+          timeOut.ignore = true
+          clientSocket.removeListener('disconnect', exitFn)
+
+          if (obj && obj.result && obj.result.id === cmdObj.id) {
+            log.debug(`Command ${cmdObj.command} succeeded.`)
+            _resultQueue.push(obj.result)
+            resolve()
+          } else {
+            reject(
+              `Failed to get expected acknowledgement of command ${cmdObj.command}. ` +
+                `Expected command id ${cmdObj.id}, received response: ` +
+                `${JSON.stringify(obj, null, 2)}`
+            )
+          }
+        })
+
+        // Time-out logic.  Issue a warning, clear the listener and resolve this promise:
+        //
+        setTimeout(() => {
+          if (!timeOut.ignore) {
+            clientSocket.removeAllListeners('result')
+            clientSocket.removeListener('disconnect', exitFn)
+            reject(
+              `runClientCommand timed out after ${timeOutMs / 1000} seconds, while running:\n` +
+                JSON.stringify(cmdObj, null, 2)
+            )
+          }
+        }, timeOutMs)
+      })
+    } catch (err) {
+      cmdObj.error = err
+      _resultQueue.push(cmdObj)
+    }
+  }
+
+  _runningClientCommand = false
 }
 
 type CommandType = {
