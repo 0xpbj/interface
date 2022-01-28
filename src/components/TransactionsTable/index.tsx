@@ -117,6 +117,10 @@ const DataRow = ({ transaction, color }: { transaction: LTTransaction; color?: s
   const label1 = amountAIn ? `${(+formatEther(amountAIn)).toFixed(2)}` : `${(+formatEther(amountAOut)).toFixed(2)}`
   const label2 = amountBOut ? `${(+formatEther(amountBOut)).toFixed(2)}` : `${(+formatEther(amountBIn)).toFixed(2)}`
 
+  let gasUsed = ''
+  if (transaction.amountUSD && BigNumber.from(transaction.amountUSD)) {
+    gasUsed = BigNumber.from(transaction.amountUSD).toString()
+  }
   return (
     <ResponsiveGrid>
       <Label color={color ?? theme.blue1} fontWeight={400}>
@@ -138,7 +142,7 @@ const DataRow = ({ transaction, color }: { transaction: LTTransaction; color?: s
         {label2 !== '0.00' ? label2 : ''}
       </Label>
       <Label end={1} fontWeight={400}>
-        {BigNumber.from(transaction.amountUSD).toString()}
+        {gasUsed}
       </Label>
       <Label end={1} fontWeight={400}>
         <ExternalLink href={getEtherscanLink(1, transaction.sender, 'address')} style={{ color: color ?? theme.blue1 }}>
