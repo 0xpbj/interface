@@ -1,4 +1,5 @@
 import { formatEther } from '@ethersproject/units'
+import { BigNumber } from '@ethersproject/bignumber'
 import Card from 'components/Card'
 import { AutoColumn } from 'components/Column'
 import Loader from 'components/Loader'
@@ -13,6 +14,7 @@ import { LTTransaction, Transaction, TransactionType } from 'types'
 import { getEtherscanLink, shortenAddress } from 'utils'
 // import { useActiveNetworkVersion } from 'state/application/hooks'
 // import { OptimismNetworkInfo } from 'constants/networks'
+import { formatDollarAmount } from 'utils/numbers'
 
 // AC: was DarkGreyCard
 const Wrapper = styled(Card)`
@@ -136,11 +138,14 @@ const DataRow = ({ transaction, color }: { transaction: LTTransaction; color?: s
         {label2 !== '0.00' ? label2 : ''}
       </Label>
       <Label end={1} fontWeight={400}>
+        {BigNumber.from(transaction.amountUSD).toString()}
+      </Label>
+      <Label end={1} fontWeight={400}>
         <ExternalLink href={getEtherscanLink(1, transaction.sender, 'address')} style={{ color: color ?? theme.blue1 }}>
           {shortenAddress(transaction.sender)}
         </ExternalLink>
       </Label>
-      <Label end={1} fontWeight={100}>
+      <Label end={1} fontWeight={400}>
         {/* {formatTime(transaction.timestamp, 0)} */}
         {Math.floor(parseFloat(transaction.timestamp))}
       </Label>
@@ -282,6 +287,9 @@ export default function TransactionTable({
             }}
           >
             Received
+          </ClickableText>
+          <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.sender)}>
+            Gas Used
           </ClickableText>
           <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.sender)}>
             Account {arrow(SORT_FIELD.sender)}

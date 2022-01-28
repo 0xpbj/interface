@@ -64,7 +64,7 @@ type InfoType = {
 }
 
 function numberWithCommas(x: number): string {
-  return new Intl.NumberFormat('en-GB', {style: 'decimal', maximumFractionDigits: 3 }) .format(x)
+  return new Intl.NumberFormat('en-GB', { style: 'decimal', maximumFractionDigits: 3 }).format(x)
 }
 
 function InfoBox({ message, icon }: { message?: ReactNode; icon: ReactNode }) {
@@ -223,7 +223,7 @@ export default function AddLiquidity({
                 token1Symbol,
                 token0Address,
                 token1Address,
-                amountUSD: gasUsed,
+                amountUSD: gasUsed?.hex,
                 amountToken0: reserveA,
                 amountToken1: reserveB,
                 amount,
@@ -255,7 +255,7 @@ export default function AddLiquidity({
             },
           ])
           fakeDateMs += BLOCK_TIME_MS
-        // } else if (message && message !== 'Simulation completed.') {
+          // } else if (message && message !== 'Simulation completed.') {
         } else if (message) {
           setInfoObj({
             id: undefined,
@@ -273,7 +273,9 @@ export default function AddLiquidity({
     }
   }, [])
 
+  const [infoMsg, setInfoMsg] = useState<string | undefined>()
   const getNumberOfIntervalsAndBlockIntervals = () => {
+    setInfoMsg('')
     const amt = parseFloat(formattedAmounts[Field.CURRENCY_A])
     const amtScale = amt * 10 ** 18
     const blockInterval = 10
@@ -292,7 +294,12 @@ export default function AddLiquidity({
         )
       }
       if (maxNumberOfIntervals < 5) {
-        throw new Error(`Insufficient amount to justify long term trade (${amt} tokens - ${amtScale} scaled). Add more tokens ...`)
+        setInfoMsg(
+          `Insufficient amount to justify long term trade (${amt} tokens - ${amtScale} scaled). Add more tokens ...`
+        )
+        // throw new Error(
+        //   `Insufficient amount to justify long term trade (${amt} tokens - ${amtScale} scaled). Add more tokens ...`
+        // )
       }
       numberOfIntervals = maxNumberOfIntervals - 1
       console.log(`DEBUG - Auto mode - set numberOfIntervals=${numberOfIntervals}`)
@@ -348,7 +355,6 @@ export default function AddLiquidity({
     setMaxOutput(ZERO)
   }
 
-
   const [minOutput, setMinOutput] = useState<string>(ZERO)
   const [maxOutput, setMaxOutput] = useState<string>(ZERO)
 
@@ -360,34 +366,52 @@ export default function AddLiquidity({
     // if (!hqRunning) {
     //   hqRunning = true
 
-      console.log("HISTORICAL QUOTE")
-      const { amt, numberOfIntervals, blockInterval } = getNumberOfIntervalsAndBlockIntervals()
-      const { data } = await historicQuote(numberOfIntervals, blockInterval)
-      const { reserveData } = data
-      const usdcReserves = reserveData.reserveTokenA
-      const ethReserves = reserveData.reserveTokenB
-      const amountIn = parseFloat(formattedAmounts[Field.CURRENCY_A])
-      if (currencyIdA === 'ETH') {
-        const amountOutMax = amountIn * (usdcReserves / ethReserves)
-        const k = usdcReserves * ethReserves
-        const ammAmountTokenB = k / (ethReserves + amountIn)
-        const amountOutMin = 0.997 * (usdcReserves - ammAmountTokenB)
+    console.log('HISTORICAL QUOTE')
+    const { amt, numberOfIntervals, blockInterval } = getNumberOfIntervalsAndBlockIntervals()
+    const { data } = await historicQuote(numberOfIntervals, blockInterval)
+    const { reserveData } = data
+    const usdcReserves = reserveData.reserveTokenA
+    const ethReserves = reserveData.reserveTokenB
+    const amountIn = parseFloat(formattedAmounts[Field.CURRENCY_A])
+    if (currencyIdA === 'ETH') {
+      const amountOutMax = amountIn * (usdcReserves / ethReserves)
+      const k = usdcReserves * ethReserves
+      const ammAmountTokenB = k / (ethReserves + amountIn)
+      const amountOutMin = 0.997 * (usdcReserves - ammAmountTokenB)
+      if (!isNaN(amountOutMax)) {
         setMaxOutput(numberWithCommas(amountOutMax))
-        setMinOutput(numberWithCommas(amountOutMin))
-        console.log("MAX", amountOutMax)
-        console.log("MIN", amountOutMin)
       } else {
-        const amountOutMax = amountIn * (ethReserves / usdcReserves)
-        const k = usdcReserves * ethReserves
-        const ammAmountTokenB = k / (usdcReserves + amountIn)
-        const amountOutMin = 0.997 * (ethReserves - ammAmountTokenB)
-        setMaxOutput(numberWithCommas(amountOutMax))
-        setMinOutput(numberWithCommas(amountOutMin))
-        console.log("MAX", amountOutMax)
-        console.log("MIN", amountOutMin)
+        setMaxOutput('0')
       }
 
-      hqRunning = false
+      if (!isNaN(amountOutMin)) {
+        setMinOutput(numberWithCommas(amountOutMin))
+      } else {
+        setMinOutput('0')
+      }
+      console.log('MAX', amountOutMax)
+      console.log('MIN', amountOutMin)
+    } else {
+      const amountOutMax = amountIn * (ethReserves / usdcReserves)
+      const k = usdcReserves * ethReserves
+      const ammAmountTokenB = k / (usdcReserves + amountIn)
+      const amountOutMin = 0.997 * (ethReserves - ammAmountTokenB)
+      if (!isNaN(amountOutMax)) {
+        setMaxOutput(numberWithCommas(amountOutMax))
+      } else {
+        setMaxOutput('0')
+      }
+
+      if (!isNaN(amountOutMin)) {
+        setMinOutput(numberWithCommas(amountOutMin))
+      } else {
+        setMinOutput('0')
+      }
+      console.log('MAX', amountOutMax)
+      console.log('MIN', amountOutMin)
+    }
+
+    hqRunning = false
     // }
   }
 
@@ -559,9 +583,12 @@ export default function AddLiquidity({
           {infoObj?.flag && (
             <InfoBox
               message={<Trans>{`${infoObj.command} ${infoObj?.id}`}</Trans>}
-              icon={ (infoObj.command === 'Simulation completed.') ? undefined : <Loader size="30px" stroke={theme.text4} />}
+              icon={
+                infoObj.command === 'Simulation completed.' ? undefined : <Loader size="30px" stroke={theme.text4} />
+              }
             />
           )}
+          {infoMsg && <InfoBox message={<Trans>{`${infoMsg}`}</Trans>} icon={undefined}/>}
           {!hasExistingPosition && (
             <>
               <div>
@@ -611,7 +638,10 @@ export default function AddLiquidity({
             <div style={{ width: '100%', height: '10px' }} />
             <CurrencyInputPanel
               value={formattedAmounts[Field.CURRENCY_A]}
-              onUserInput={onFieldAInput}
+              onUserInput={(e) => {
+                getHistoricQuote()
+                onFieldAInput(e)
+              }}
               onMax={() => {
                 onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
               }}

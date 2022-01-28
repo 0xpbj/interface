@@ -56,7 +56,7 @@ export type LTTransaction = {
   token1Symbol: string
   token0Address: string
   token1Address: string
-  amountUSD: number
+  amountUSD: string
   amountToken0: number
   amountToken1: number
   amount: number
