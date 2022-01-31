@@ -57,6 +57,8 @@ const DAY_MS = 24 * 60 * 60 * 1000
 const BLOCK_TIME_MS = DAY_MS // 14 seconds -> 1d b/c of bad chart solution for now
 let fakeDateMs = Date.now() - 100 * 365 * DAY_MS // ~100 years ago (each block is a day, gives us ~36500 blocks)
 
+const hquoteCache: {[index: string]: any} = {}
+
 type InfoType = {
   id: number | undefined
   command: string
@@ -275,7 +277,7 @@ export default function AddLiquidity({
 
   const [infoMsg, setInfoMsg] = useState<string | undefined>()
   const getNumberOfIntervalsAndBlockIntervals = () => {
-    setInfoMsg('')
+    let message = ''
     const amt = parseFloat(formattedAmounts[Field.CURRENCY_A])
     const amtScale = amt * 10 ** 18
     const blockInterval = 10
@@ -286,7 +288,7 @@ export default function AddLiquidity({
       //  Auto - algo:
       //  AmountPerBlock = amtScale / (blockInterval * numberOfIntervals) >> 1
       //  AmountPerBlock = amtScale / (blockInterval * numberOfIntervals) > 10
-      //  amtScale / (blockInterval * 10) > numberOfIntervals
+      //                   amtScale / (blockInterval * 10) > numberOfIntervals
       const maxNumberOfIntervals = Math.floor(amtScale / (blockInterval * 10))
       if (isNaN(maxNumberOfIntervals)) {
         throw new Error(
@@ -294,9 +296,7 @@ export default function AddLiquidity({
         )
       }
       if (maxNumberOfIntervals < 5) {
-        setInfoMsg(
-          `Insufficient amount to justify long term trade (${amt} tokens - ${amtScale} scaled). Add more tokens ...`
-        )
+        message = `Insufficient amount to justify long term trade (${amt} tokens - ${amtScale} scaled). Add more tokens ...`
         // throw new Error(
         //   `Insufficient amount to justify long term trade (${amt} tokens - ${amtScale} scaled). Add more tokens ...`
         // )
@@ -304,6 +304,7 @@ export default function AddLiquidity({
       numberOfIntervals = maxNumberOfIntervals - 1
       console.log(`DEBUG - Auto mode - set numberOfIntervals=${numberOfIntervals}`)
     }
+    setInfoMsg(message)
     return {
       amt,
       numberOfIntervals,
@@ -369,7 +370,16 @@ export default function AddLiquidity({
 
     console.log('HISTORICAL QUOTE')
     const { amt, numberOfIntervals, blockInterval } = getNumberOfIntervalsAndBlockIntervals()
-    const { data } = await historicQuote(numberOfIntervals, blockInterval)
+    const key = `${numberOfIntervals}-${blockInterval}`
+    let data: any = undefined
+    if (hquoteCache.hasOwnProperty(key)) {
+      data = hquoteCache[key]
+    } else {
+      const result = await historicQuote(numberOfIntervals, blockInterval)
+      data = result.data
+      hquoteCache[key] = data
+    }
+
     const { reserveData } = data
     const usdcReserves = reserveData.reserveTokenA
     const ethReserves = reserveData.reserveTokenB
@@ -640,8 +650,8 @@ export default function AddLiquidity({
             <CurrencyInputPanel
               value={formattedAmounts[Field.CURRENCY_A]}
               onUserInput={(e) => {
-                getHistoricQuote()
                 onFieldAInput(e)
+                getHistoricQuote()
               }}
               onMax={() => {
                 onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
