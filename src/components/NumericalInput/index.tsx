@@ -56,7 +56,11 @@ export const Input = React.memo(function InnerInput({
   prependSymbol?: string | undefined
 } & Omit<React.HTMLProps<HTMLInputElement>, 'ref' | 'onChange' | 'as'>) {
   const enforcer = (nextUserInput: string) => {
+    // console.log(`NumericalInput::Input::enforcer\n` +
+    //             `\t${nextUserInput} (nextUserInput)\n` +
+    //             `\t${value} (value)\n`)
     if (nextUserInput === '' || inputRegex.test(escapeRegExp(nextUserInput))) {
+      // console.log(`NumericalInput::Input::enforcer calling onUserInput(nextUserInput)`)
       onUserInput(nextUserInput)
     }
   }
@@ -66,6 +70,10 @@ export const Input = React.memo(function InnerInput({
       {...rest}
       value={prependSymbol && value ? prependSymbol + value : value}
       onChange={(event) => {
+        // console.log(`NumericalInput::Input::StyledInput::onChange\n` +
+        //             `\t${event.target.value} (event.target.value)\n` +
+        //             `\t${value} (value)\n`)
+
         if (prependSymbol) {
           const value = event.target.value
 

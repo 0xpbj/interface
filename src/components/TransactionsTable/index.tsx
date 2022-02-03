@@ -93,11 +93,20 @@ const DataRow = ({ transaction, color }: { transaction: LTTransaction; color?: s
     transaction
   const abs0 = Math.abs(amountToken0)
   const abs1 = Math.abs(amountToken1)
-  const outputTokenSymbol = amountToken0 < 0 ? token1Symbol : token0Symbol
-  const inputTokenSymbol = amountToken1 < 0 ? token0Symbol : token1Symbol
+  let outputTokenSymbol = amountToken0 < 0 ? token1Symbol : token0Symbol
+  let inputTokenSymbol = amountToken1 < 0 ? token0Symbol : token1Symbol
   // const [activeNetwork] = useActiveNetworkVersion()
   const activeNetwork = 'mainnet'
   const theme = useTheme()
+  
+  const txnType: any = Number(type)
+
+  // Horrible demo hack--always doing eth so show withdraw of usdc:
+  if (txnType === TransactionType.WITHDRAW && transaction.amount) {
+    const temp = outputTokenSymbol
+    outputTokenSymbol = inputTokenSymbol
+    inputTokenSymbol = temp
+  }
 
   const operations: any = {
     [TransactionType.SWAP]: `Swap ${inputTokenSymbol} for ${outputTokenSymbol}`,
@@ -111,11 +120,17 @@ const DataRow = ({ transaction, color }: { transaction: LTTransaction; color?: s
     [TransactionType.APPROVE]: `Wallet token approval.`,
     [TransactionType.ARB_SWAP]: `Arbitrage ${inputTokenSymbol} for ${outputTokenSymbol}`,
   }
-  const txnType: any = Number(type)
   const opLabel = operations.hasOwnProperty(txnType) ? operations[txnType] : 'Unknown operation'
 
-  const label1 = amountAIn ? `${(+formatEther(amountAIn)).toFixed(2)}` : `${(+formatEther(amountAOut)).toFixed(2)}`
+  let label1 = amountAIn ? `${(+formatEther(amountAIn)).toFixed(2)}` : `${(+formatEther(amountAOut)).toFixed(2)}`
   const label2 = amountBOut ? `${(+formatEther(amountBOut)).toFixed(2)}` : `${(+formatEther(amountBIn)).toFixed(2)}`
+
+  // Extract amount for withdraw (code in addliquidity pushes the amount in from events):
+  if (txnType === TransactionType.WITHDRAW && transaction.amount) {
+    console.log(`Extract withdraw amount:\n${JSON.stringify(transaction, null, 2)}\n`)
+    label1 = `${(+formatEther(transaction.amount)).toFixed(2)}`
+    console.log(`\tfound amount ${label1}`)
+  }
 
   let gasUsed = ''
   if (transaction.amountUSD && BigNumber.from(transaction.amountUSD)) {

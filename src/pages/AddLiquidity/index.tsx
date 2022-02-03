@@ -276,9 +276,10 @@ export default function AddLiquidity({
   }, [])
 
   const [infoMsg, setInfoMsg] = useState<string | undefined>()
-  const getNumberOfIntervalsAndBlockIntervals = () => {
+  const getNumberOfIntervalsAndBlockIntervals = (nextAmount?: string) => {
     let message = ''
-    const amt = parseFloat(formattedAmounts[Field.CURRENCY_A])
+    const amt = nextAmount ? 
+      parseFloat(nextAmount) : parseFloat(formattedAmounts[Field.CURRENCY_A])
     const amtScale = amt * 10 ** 18
     const blockInterval = 10
     let numberOfIntervals = 0
@@ -360,7 +361,7 @@ export default function AddLiquidity({
   const [minOutput, setMinOutput] = useState<string>(ZERO)
   const [maxOutput, setMaxOutput] = useState<string>(ZERO)
 
-  const getHistoricQuote = async (): Promise<void> => {
+  const getHistoricQuote = async (nextAmount?: string): Promise<void> => {
     /* Only one issuance of this command can be running at once--we don't presently
        have command queueing and calling it multiple times messes up the sequence of 
        values returned (it's a simple sequential handshake).
@@ -369,7 +370,7 @@ export default function AddLiquidity({
     //   hqRunning = true
 
     console.log('HISTORICAL QUOTE')
-    const { amt, numberOfIntervals, blockInterval } = getNumberOfIntervalsAndBlockIntervals()
+    const { amt, numberOfIntervals, blockInterval } = getNumberOfIntervalsAndBlockIntervals(nextAmount)
     const key = `${numberOfIntervals}-${blockInterval}`
     let data: any = undefined
     if (hquoteCache.hasOwnProperty(key)) {
@@ -383,7 +384,8 @@ export default function AddLiquidity({
     const { reserveData } = data
     const usdcReserves = reserveData.reserveTokenA
     const ethReserves = reserveData.reserveTokenB
-    const amountIn = parseFloat(formattedAmounts[Field.CURRENCY_A])
+    const amountIn = nextAmount ? 
+      parseFloat(nextAmount) : parseFloat(formattedAmounts[Field.CURRENCY_A])
     if (currencyIdA === 'ETH') {
       const amountOutMax = amountIn * (usdcReserves / ethReserves)
       const k = usdcReserves * ethReserves
@@ -651,7 +653,7 @@ export default function AddLiquidity({
               value={formattedAmounts[Field.CURRENCY_A]}
               onUserInput={(e) => {
                 onFieldAInput(e)
-                getHistoricQuote()
+                getHistoricQuote(e)
               }}
               onMax={() => {
                 onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
